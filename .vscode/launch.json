@@ -1,0 +1,86 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": { "DYLD_LIBRARY_PATH": "/opt/homebrew/opt/expat/lib" }
+    },
+    {
+      "name": "Example: quickstart",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/quickstart.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": { "DYLD_LIBRARY_PATH": "/opt/homebrew/opt/expat/lib" }
+    },
+    {
+      "name": "Pytest: Current File",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-q"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": { "DYLD_LIBRARY_PATH": "/opt/homebrew/opt/expat/lib" }
+    },
+    {
+      "name": "Pytest: All",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-q"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": { "DYLD_LIBRARY_PATH": "/opt/homebrew/opt/expat/lib" }
+    },
+    {
+      "name": "Live: Ollama (full I/O)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/live_ollama.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/opt/expat/lib",
+        "MORAINET_OLLAMA_MODEL": "qwen2.5:3b"
+      }
+    },
+    {
+      "name": "Live: Ollama (stream)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/live_ollama_stream.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/opt/expat/lib",
+        "MORAINET_OLLAMA_MODEL": "qwen2.5:3b"
+      }
+    },
+    {
+      "name": "Live: Chat (interactive)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/chat.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/opt/expat/lib",
+        "MORAINET_OLLAMA_MODEL": "qwen2.5:3b"
+      }
+    }
+  ]
+}

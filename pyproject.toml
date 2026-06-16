@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "morainet-ai"
+version = "1.0.0"
+description = "A lightweight, extensible, embeddable AI Agent Runtime Framework"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Morainet AI" }]
+keywords = ["ai", "agent", "llm", "runtime", "tool-calling"]
+dependencies = [
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "httpx>=0.27",
+    "loguru>=0.7",
+]
+
+[project.optional-dependencies]
+openai = ["httpx>=0.27"]
+chroma = ["chromadb>=0.5"]
+mcp = ["mcp>=1.0"]
+otel = ["opentelemetry-sdk>=1.20"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "opentelemetry-sdk>=1.20",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/MorainetAI/morainet-ai"
+
+[tool.hatch.build.targets.wheel]
+packages = ["morainet"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-m 'not live'"
+markers = [
+    "live: hits real external endpoints; requires credentials (run with `pytest -m live`)",
+]
+
+[tool.coverage.run]
+source = ["morainet"]
+omit = ["morainet/mcp/client.py"]  # stdio transport needs a live server
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
