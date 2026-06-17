@@ -24,7 +24,7 @@ jobs:
         run: |
           set -e
           git clone "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" wiki
-          rm -f wiki/*.md                 # 与 docs/wiki 保持一致（repo 为真源）
+          # 非破坏性：只新增/更新 docs/wiki 里的页面，不删除 wiki 上的其它页面。
           cp docs/wiki/*.md wiki/
           cd wiki
           git config user.name  "github-actions[bot]"
