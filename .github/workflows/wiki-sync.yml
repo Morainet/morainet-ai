@@ -1,0 +1,34 @@
+name: Sync Wiki
+
+# 把主仓库的 docs/wiki/ 作为唯一真源，推送后自动同步到 GitHub Wiki。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/wiki/**"
+      - ".github/workflows/wiki-sync.yml"
+  workflow_dispatch: {}          # 也支持在 Actions 页手动触发
+
+permissions:
+  contents: write                # GITHUB_TOKEN 推送同仓库 wiki 需要
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Push docs/wiki -> GitHub Wiki
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" wiki
+          rm -f wiki/*.md                 # 与 docs/wiki 保持一致（repo 为真源）
+          cp docs/wiki/*.md wiki/
+          cd wiki
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "docs: sync wiki from ${GITHUB_SHA::7}"
+          git push
