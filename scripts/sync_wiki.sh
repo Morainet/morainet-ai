@@ -16,7 +16,7 @@ trap 'rm -rf "$TMP"' EXIT
 echo "克隆 wiki: $WIKI_URL"
 git clone --quiet "$WIKI_URL" "$TMP"
 
-rm -f "$TMP"/*.md           # 以 docs/wiki 为准
+# 非破坏性：只新增/更新 docs/wiki 里的页面，不删除 wiki 上已有的其它页面。
 cp "$SRC"/*.md "$TMP"/
 
 cd "$TMP"
@@ -28,4 +28,3 @@ fi
 git commit --quiet -m "docs: sync wiki from local docs/wiki"
 git push --quiet
 echo "✅ 已同步到 GitHub Wiki"
-s
