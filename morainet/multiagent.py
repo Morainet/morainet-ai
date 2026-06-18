@@ -56,7 +56,7 @@ class TeamResult:
     final: str
     outputs: dict[str, str] = field(default_factory=dict)
     route: str | None = None
-    rounds: list[dict[str, str]] = field(default_factory=list)
+    rounds: list[dict[str, str | int]] = field(default_factory=list)
     """Round-by-round transcript (GroupChat / Debate)."""
 
 
@@ -243,7 +243,7 @@ class GroupChat:
     async def arun(self, query: str) -> TeamResult:
         outputs: dict[str, str] = {}
         history: list[str] = [f"用户问题：{query}"]
-        rounds: list[dict[str, str]] = []
+        rounds: list[dict[str, str | int]] = []
 
         # Select initial speaker
         if self.speaker_selection == "auto":
@@ -367,7 +367,7 @@ class Debate:
     async def arun(self, topic: str) -> TeamResult:
         outputs: dict[str, str] = {}
         history: list[str] = [f"辩论题目：{topic}"]
-        rounds: list[dict[str, str]] = []
+        rounds: list[dict[str, str | int]] = []
 
         # Structured rounds
         for rnd in range(1, self.rounds + 1):

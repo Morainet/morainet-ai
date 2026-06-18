@@ -50,9 +50,10 @@ def parse_claude_sse_event(event_type: str, data: dict[str, Any]) -> str | None:
     - ``content_block_delta`` with ``text_delta`` subtype
     """
     if event_type == "content_block_delta":
-        delta = data.get("delta", {})
+        delta: dict[str, Any] = data.get("delta", {})
         if delta.get("type") == "text_delta":
-            return delta.get("text")
+            text: str | None = delta.get("text")
+            return text
     return None
 
 
