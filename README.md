@@ -1,133 +1,139 @@
 # Morainet AI
 
-> 一个轻量、可扩展、易嵌入的 **AI Agent Runtime Framework**。
-> *“AI Agent 的 Spring Framework”*
+> A lightweight, extensible, embeddable **AI Agent Runtime Framework**.
+> *"The Spring Framework for AI Agents"*
 
-Morainet AI 是一套 **Agent 运行时内核**：用统一的接口驱动任意大模型，把"裸模型"升级成能**调用工具、拥有记忆、自主推理、可被编排、可观测、可恢复**的 Agent，并以库的形式嵌入你的 Python 应用。
+Morainet AI is an **Agent runtime kernel**: drive any LLM through a unified interface, upgrading a "bare model" into an Agent that can **call tools, retain memory, reason autonomously, be orchestrated, be observable, and be resumable** — all embeddable as a library in your Python applications.
 
-它不是聊天产品，也不是某个垂直场景的成品；它是**搭建 Agent 的底盘**——你在它之上构建客服助手、知识问答、编码助手、自动化流程或多 Agent 系统。
+It is not a chatbot product, nor a ready-made solution for a specific vertical; it is the **chassis for building Agents** — on top of it you build customer-service assistants, knowledge Q&A, coding assistants, automation pipelines, or multi-agent systems.
+
+<!-- README-I18N:START -->
+
+**English** | [汉语](./README.zh.md)
+
+<!-- README-I18N:END -->
 
 ---
 
-## 目录
+## Table of Contents
 
-- [为什么是 Morainet](#为什么是-morainet)
-- [核心特性](#核心特性)
-- [整体架构](#整体架构)
-- [模块一览](#模块一览)
-- [设计理念](#设计理念)
-- [安装](#安装)
-- [快速上手](#快速上手)
-- [项目结构](#项目结构)
-- [示例](#示例)
-- [测试与 CI](#测试与-ci)
-- [文档](#文档)
-- [路线图](#路线图)
+- [Why Morainet](#why-morainet)
+- [Key Features](#key-features)
+- [Architecture Overview](#architecture-overview)
+- [Module Overview](#module-overview)
+- [Design Philosophy](#design-philosophy)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Examples](#examples)
+- [Testing & CI](#testing--ci)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
 - [License](#license)
 
 ---
 
-## 为什么是 Morainet
+## Why Morainet
 
-| | Morainet 的取舍 |
-| --- | --- |
-| **轻量内核** | 核心包不强依赖任何 LLM SDK（约 3000 行）；厂商依赖走可选 extras |
-| **零厂商锁定** | 统一 Provider 抽象，一行切换 OpenAI / Claude / Gemini / Ollama / DeepSeek |
-| **类型安全** | 全程 Pydantic v2 + `mypy --strict`，IDE 友好、可静态检查 |
-| **易嵌入** | 库优先，可直接塞进现有后端服务，无强框架约束 |
-| **双执行模型** | 自主推理（Reasoning Loop）+ 显式编排（Workflow DAG），按场景选择 |
-| **本地优先** | 内置 Mock 与 Ollama 支持，零成本离线开发、数据不出本机 |
+| | Morainet's trade-offs |
+|: --- | --- |
+| **Lightweight kernel** | Core package has no hard LLM SDK dependency (~3000 lines); vendor deps go into optional extras |
+| **Zero vendor lock-in** | Unified Provider abstraction — switch between OpenAI / Claude / Gemini / Ollama / DeepSeek in one line |
+| **Type-safe** | Pydantic v2 + `mypy --strict` throughout, IDE-friendly and statically checkable |
+| **Easy to embed** | Library-first, drop into any existing backend service with no framework constraints |
+| **Dual execution model** | Autonomous reasoning (Reasoning Loop) + explicit orchestration (Workflow DAG), choose by scenario |
+| **Local-first** | Built-in Mock and Ollama support — zero-cost offline development, data stays on your machine |
 
-与同类的关系：它**不**和 ChatGPT/Claude 这类模型产品竞争（反而调用它们）；相比 LangChain 更小更可读，相比 CrewAI/AutoGen 更通用、更轻。定位是**小而稳、易嵌入的 Agent 运行时**。
-
----
-
-## 核心特性
-
-- **Tool Calling** —— `@tool` 装饰器从类型注解 + docstring 自动生成 JSON Schema，自动校验参数
-- **多 Provider** —— OpenAI / Claude / Gemini / Ollama / DeepSeek，内置 `MockProvider` 离线可跑
-- **可插拔推理策略** —— `ToolCallingStrategy`（默认，原生函数调用）/ `ReActStrategy`（文本式 Reason+Act），可自定义
-- **流式输出** —— `agent.astream()`，OpenAI(SSE) / Ollama(NDJSON) 真流式
-- **记忆系统** —— `ShortMemory`（窗口 / token 预算）· `LongMemory`（向量检索 RAG）· `SummarizingMemory`（自动摘要压缩）
-- **多 Agent 编排** —— 层级(`as_tool`) / 顺序(`Pipeline`) / 路由(`Router`) 三种拓扑
-- **Workflow 引擎** —— DAG 编排，环检测 + 拓扑分层并行执行，可导出 Mermaid / DOT
-- **Prompt 管理** —— 版本化模板、安全渲染（防注入）、可覆盖
-- **可观测性** —— Hook 事件系统 + `TraceCollector` 结构化轨迹 + `Debugger` 时间线 + OpenTelemetry 导出
-- **状态持久化** —— `Checkpoint`（内存 / 文件 / SQLite），支持断点恢复 `agent.resume()`
-- **生产化** —— 指数退避重试 · token 预算 · 连续失败中止 · 危险工具人工审批
-- **扩展机制** —— Plugin（entry points 动态发现）· MCP 集成（工具 / 资源 / 提示）
+Compared to peers: it does **not** compete with model products like ChatGPT/Claude (it calls them); vs. LangChain it is smaller and more readable, vs. CrewAI/AutoGen it is more general-purpose and lighter. Positioned as a **small, stable, embeddable Agent runtime**.
 
 ---
 
-## 整体架构
+## Key Features
 
-分层清晰：应用层调用 Agent Core，Core 编排推理策略、记忆与工具，统一经 Provider 抽象访问各家模型；可观测、持久化、扩展作为横切能力贯穿全程。
+- **Tool Calling** — `@tool` decorator auto-generates JSON Schema from type annotations + docstrings, with automatic parameter validation
+- **Multi-Provider** — OpenAI / Claude / Gemini / Ollama / DeepSeek; built-in `MockProvider` for offline development
+- **Pluggable Reasoning Strategy** — `ToolCallingStrategy` (default, native function calling) / `ReActStrategy` (text-based Reason+Act), fully customizable
+- **Streaming Output** — `agent.astream()`, true streaming for OpenAI (SSE) / Ollama (NDJSON) / Claude (SSE) / Gemini (SSE)
+- **Memory System** — `ShortMemory` (window / token budget) · `LongMemory` (vector-retrieval RAG) · `SummarizingMemory` (auto-summarization compression)
+- **Multi-Agent Orchestration** — Three topologies: hierarchical (`as_tool`) / sequential (`Pipeline`) / routing (`Router`)
+- **Workflow Engine** — DAG orchestration, cycle detection + topological level parallel execution, exportable as Mermaid / DOT
+- **Prompt Management** — Versioned templates, safe rendering (injection-proof), overridable
+- **Observability** — Hook event system + `TraceCollector` structured traces + `Debugger` timeline + OpenTelemetry export
+- **State Persistence** — `Checkpoint` (in-memory / file / SQLite), supports resumption via `agent.resume()`
+- **Production Hardening** — Exponential backoff retry · token budget · consecutive-failure abort · dangerous-tool human approval
+- **Extension Mechanism** — Plugin (entry points dynamic discovery) · MCP integration (tools / resources / prompts)
+
+---
+
+## Architecture Overview
+
+Clear layering: the application layer calls Agent Core; Core orchestrates reasoning strategies, memory, and tools, accessing vendor models through the unified Provider abstraction; observability, persistence, and extensibility run as cross-cutting capabilities throughout.
 
 ```mermaid
 flowchart TD
-    App[应用 / CLI / 服务] -->|run / astream| Core[Agent Core<br/>上下文·编排·记忆持久化]
+    App[App / CLI / Service] -->|run / astream| Core[Agent Core<br/>Context · Orchestration · Memory Persistence]
 
     Core --> Reasoning[Reasoning Strategy<br/>ToolCalling / ReAct]
     Core --> Memory[Memory<br/>Short / Long / Summarizing]
     Core --> Tools[Tool Registry<br/>@tool · Schema]
     Core --> Hooks[Hooks<br/>Trace · Debug · Checkpoint · OTel]
 
-    Reasoning --> Provider[Provider 抽象<br/>+ Retrying]
+    Reasoning --> Provider[Provider Abstraction<br/>+ Retrying]
     Tools --> Provider
     Memory --> Embed[Embedder / VectorStore]
 
     Provider --> OpenAI & Claude & Gemini & Ollama & DeepSeek
 
-    Tools -. as_tool .-> Sub[子 Agent]
+    Tools -. as_tool .-> Sub[Sub Agent]
     Core -. Pipeline / Router .-> Sub
 ```
 
-**一次 `agent.run()` 的流程**：准备上下文（系统提示 + 记忆注入）→ 推理策略循环（调模型 → 执行工具 → 回灌结果，直到收敛）→ 触发 Hook（追踪 / 快照）→ 持久化记忆 → 返回 `AgentResult`（含最终答案、步骤轨迹、token 用量、trace_id）。
+**An `agent.run()` flow**: Prepare context (system prompt + memory injection) → Reasoning strategy loop (call model → execute tools → feed back results, until convergence) → Trigger hooks (tracing / snapshot) → Persist memory → Return `AgentResult` (containing final answer, step trace, token usage, trace_id).
 
-> 完整设计见 [`docs/architecture.md`](docs/architecture.md)，实现说明与差异见 [`docs/architecture-v1.3.md`](docs/architecture-v1.3.md)。
-
----
-
-## 模块一览
-
-| 模块 | 职责 |
-| --- | --- |
-| `core/` | `Agent`、`Context`、统一数据模型（Message / ToolCall / Step / AgentResult） |
-| `reasoning/` | `ReasoningStrategy` 抽象 + `ToolCallingStrategy`（默认）/ `ReActStrategy` |
-| `tools/` | `@tool` 装饰器、`ToolRegistry`、类型注解 → JSON Schema、`Tool.from_schema` |
-| `providers/` | Provider 抽象与各家实现、`RetryingProvider`、SSE/NDJSON 流式解析 |
-| `memory/` | Memory / Embedder / VectorStore 抽象与实现（Hash/Ollama/OpenAI、InMemory/Chroma） |
-| `workflow/` | `Workflow` DAG、分层并行执行器、Mermaid/DOT 导出 |
-| `prompts/` | `PromptTemplate` / `PromptRegistry` / 内置模板 |
-| `persistence/` | `Checkpoint`、内存/文件/SQLite Store、`CheckpointHook` |
-| `observability/` | `Hook` / `HookManager`、`TraceCollector`、`OTelHook` |
-| `mcp/` | `MCPClient`、`stdio_session`、MCP 工具/资源/提示转换 |
-| `multiagent.py` | `Pipeline`（顺序）/ `Router`（路由）编排 |
-| `plugins.py` | entry points 插件注册表 |
-| `config.py` · `exceptions.py` · `tokens.py` · `debug.py` | 配置、异常体系、token 估算、Debugger |
+> Full design in [`docs/architecture.md`](docs/architecture.md); implementation notes and deviations in [`docs/architecture-v1.3.md`](docs/architecture-v1.3.md).
 
 ---
 
-## 设计理念
+## Module Overview
 
-- **轻量内核 + 可插拔扩展**：内核只定义抽象与编排，所有外部能力（模型 / 向量库 / 工具 / 协议）通过接口接入；新增厂商依赖一律放进可选 extras，保持内核零依赖。
-- **统一中间表示**：`Message` / `ToolCall` 是框架内部唯一格式，各 Provider 负责与自家 API 互译，对内核透明——这是"一行切换模型"的基础。
-- **事件驱动的横切能力**：Tracing、Checkpoint、Debugger、OTel 全部建在同一套 `Hook` 系统上，Agent 主循环零侵入，新增可观测能力只需写一个 Hook。
-- **诚实的边界**：不做模型训练、不做向量库、不做托管 UI；专注 Agent Runtime。
+| Module | Responsibility |
+|: --- | --- |
+| `core/` | `Agent`, `Context`, unified data model (Message / ToolCall / Step / AgentResult) |
+| `reasoning/` | `ReasoningStrategy` abstraction + `ToolCallingStrategy` (default) / `ReActStrategy` |
+| `tools/` | `@tool` decorator, `ToolRegistry`, type annotations → JSON Schema, `Tool.from_schema` |
+| `providers/` | Provider abstraction and vendor implementations, `RetryingProvider`, SSE/NDJSON stream parsing |
+| `memory/` | Memory / Embedder / VectorStore abstractions and implementations (Hash/Ollama/OpenAI, InMemory/Chroma) |
+| `workflow/` | `Workflow` DAG, level-based parallel executor, Mermaid/DOT export |
+| `prompts/` | `PromptTemplate` / `PromptRegistry` / built-in templates |
+| `persistence/` | `Checkpoint`, in-memory/file/SQLite Store, `CheckpointHook` |
+| `observability/` | `Hook` / `HookManager`, `TraceCollector`, `OTelHook` |
+| `mcp/` | `MCPClient`, `stdio_session`, MCP tool/resource/prompt conversion |
+| `multiagent.py` | `Pipeline` (sequential) / `Router` (routing) orchestration |
+| `plugins.py` | entry points plugin registry |
+| `config.py` · `exceptions.py` · `tokens.py` · `debug.py` | Configuration, exception hierarchy, token estimation, Debugger |
 
 ---
 
-## 安装
+## Design Philosophy
+
+- **Lightweight kernel + pluggable extensions**: The kernel defines only abstractions and orchestration; all external capabilities (models / vector stores / tools / protocols) connect through interfaces. New vendor dependencies are always placed in optional extras, keeping the kernel dependency-free.
+- **Unified intermediate representation**: `Message` / `ToolCall` are the framework's sole internal format. Each Provider handles translation to/from its vendor API, transparent to the kernel — this is the foundation for "one-line model switching".
+- **Event-driven cross-cutting capabilities**: Tracing, Checkpoint, Debugger, OTel are all built on the same `Hook` system. The Agent main loop has zero intrusion; adding new observability just means writing a Hook.
+- **Honest boundaries**: No model training, no vector database, no hosted UI; focused on Agent Runtime.
+
+---
+
+## Installation
 
 ```bash
-pip install -e ".[dev]"     # 需 Python 3.11+
+pip install -e ".[dev]"     # Requires Python 3.11+
 ```
 
-可选依赖：`".[chroma]"`（ChromaDB 向量库）、`".[mcp]"`（MCP 客户端）、`".[otel]"`（OpenTelemetry）。
+Optional dependencies: `".[chroma]"` (ChromaDB vector store), `".[mcp]"` (MCP client), `".[otel]"` (OpenTelemetry).
 
 ---
 
-## 快速上手
+## Quick Start
 
 ```python
 from morainet import Agent, tool
@@ -135,33 +141,33 @@ from morainet.providers import OpenAIProvider
 
 @tool
 def get_weather(city: str) -> str:
-    """查询指定城市的当前天气。"""
-    return f"{city} 今天晴，26°C"
+    """Query the current weather of a given city."""
+    return f"{city}: sunny, 26°C today"
 
 agent = Agent(provider=OpenAIProvider(model="gpt-4o"), tools=[get_weather])
-print(agent.run("上海今天适合穿什么？").final_answer)
+print(agent.run("What should I wear in Shanghai today?").final_answer)
 ```
 
-无 API key？换成本地模型即可（`ollama pull qwen2.5:3b`）：
+No API key? Switch to a local model (`ollama pull qwen2.5:3b`):
 
 ```python
 from morainet.providers import OllamaProvider
 agent = Agent(provider=OllamaProvider(model="qwen2.5:3b"), tools=[get_weather])
 ```
 
-更详细的分步教程见 **[GitHub Wiki](../../wiki)**。
+For detailed step-by-step tutorials, see the **[GitHub Wiki](../../wiki)**.
 
 ---
 
-## 项目结构
+## Project Structure
 
 ```text
 morainet-ai/
-├── morainet/            # 框架源码（见「模块一览」）
-├── examples/            # 覆盖多方向的可运行示例（离线即可跑）
-├── tests/               # 单元测试 + tests/live（真端点联调，默认排除）
-├── docs/                # 架构设计 / 实现说明 / wiki 草稿
-├── .github/workflows/   # CI（ruff + mypy + pytest）
+├── morainet/            # Framework source (see Module Overview)
+├── examples/            # Runnable examples covering multiple directions (works offline)
+├── tests/               # Unit tests + tests/live (live endpoint integration, excluded by default)
+├── docs/                # Architecture design / implementation notes / wiki drafts
+├── .github/workflows/   # CI (ruff + mypy + pytest)
 ├── pyproject.toml
 ├── CONTRIBUTING.md
 └── README.md
@@ -169,49 +175,49 @@ morainet-ai/
 
 ---
 
-## 示例
+## Examples
 
-`examples/` 用同一套内核搭出不同方向的 Agent，**离线即可运行**：
-
-```bash
-python examples/quickstart.py        # 工具调用
-python examples/rag_doc_qa.py        # 知识 / RAG
-python examples/coding_assistant.py  # 编码助手（真实工具 + 验证闭环）
-python examples/multi_agent.py       # 多 Agent：层级 / 顺序 / 路由
-```
-
-完整清单见 [`examples/README.md`](examples/README.md)。
-
----
-
-## 测试与 CI
+`examples/` builds agents in different directions with the same kernel, **runnable offline**:
 
 ```bash
-pytest                     # 离线单测（不需 key，MockProvider）
-pytest --cov=morainet      # 覆盖率（门禁 80%）
-pytest -m live             # 真实端点联调（设好凭证；无凭证自动跳过）
-ruff check morainet tests  # lint
-mypy morainet              # 严格类型检查
+python examples/quickstart.py        # Tool calling
+python examples/rag_doc_qa.py        # Knowledge / RAG
+python examples/coding_assistant.py  # Coding assistant (real tools + validation loop)
+python examples/multi_agent.py       # Multi-agent: hierarchical / sequential / routing
 ```
 
-GitHub Actions 在 Python 3.11 / 3.12 上运行上述检查。
+Full listing in [`examples/README.md`](examples/README.md).
 
 ---
 
-## 文档
+## Testing & CI
 
-- **架构设计**：[`docs/architecture.md`](docs/architecture.md)
-- **实现说明与路线**：[`docs/architecture-v1.3.md`](docs/architecture-v1.3.md)
-- **分步教程**：[GitHub Wiki](../../wiki)
-- **贡献指南**：[`CONTRIBUTING.md`](CONTRIBUTING.md)
+```bash
+pytest                     # Offline unit tests (no key needed, MockProvider)
+pytest --cov=morainet      # Coverage (gate: 80%)
+pytest -m live             # Live endpoint integration (set credentials; auto-skip if absent)
+ruff check morainet tests  # Lint
+mypy morainet              # Strict type checking
+```
+
+GitHub Actions runs the above checks on Python 3.11 / 3.12.
 
 ---
 
-## 路线图
+## Documentation
 
-已发布 **v1.0**：Agent Core · 多 Provider · 流式 · 记忆(RAG/摘要) · 多 Agent · Workflow · Prompt · 可观测(Hook/Trace/Debugger/OTel) · Checkpoint(含 SQLite) · 生产化(重试/预算/审批) · Plugin · MCP。
+- **Architecture design**: [`docs/architecture.md`](docs/architecture.md)
+- **Implementation notes & roadmap**: [`docs/architecture-v1.3.md`](docs/architecture-v1.3.md)
+- **Step-by-step tutorials**: [GitHub Wiki](../../wiki)
+- **Contributing guide**: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
-后续方向：真实端点联调全绿 · 更多向量库后端（Qdrant/pgvector）· 上下文压缩进推理循环 · 多 Agent 进阶编排。
+---
+
+## Roadmap
+
+**v1.0** released: Agent Core · Multi-Provider · Streaming · Memory (RAG/summarization) · Multi-Agent · Workflow · Prompt · Observability (Hook/Trace/Debugger/OTel) · Checkpoint (incl. SQLite) · Production hardening (retry/budget/approval) · Plugin · MCP.
+
+Upcoming: all live endpoint tests passing · more vector store backends (Qdrant/pgvector) · context compression in reasoning loop · advanced multi-agent orchestration.
 
 ---
 
