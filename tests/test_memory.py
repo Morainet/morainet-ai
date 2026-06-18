@@ -14,11 +14,11 @@ async def test_short_memory_window():
     assert [m.content for m in ctx] == ["m2", "m3", "m4"]
 
 
-def test_hash_embedder_similarity():
+async def test_hash_embedder_similarity():
     emb = HashEmbedder(dim=128)
-    a = emb.embed("我对花生过敏 peanut allergy")
-    b = emb.embed("peanut allergy 花生")
-    c = emb.embed("完全无关的内容 spaceship")
+    a = await emb.embed("我对花生过敏 peanut allergy")
+    b = await emb.embed("peanut allergy 花生")
+    c = await emb.embed("完全无关的内容 spaceship")
     sim_ab = sum(x * y for x, y in zip(a, b))
     sim_ac = sum(x * y for x, y in zip(a, c))
     assert sim_ab > sim_ac

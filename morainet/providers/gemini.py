@@ -118,6 +118,7 @@ class GeminiProvider(Provider):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> ChatResponse:
         system, contents = to_gemini(messages)
         payload: dict[str, Any] = {"contents": contents}

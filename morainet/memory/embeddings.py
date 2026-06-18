@@ -35,7 +35,7 @@ class HashEmbedder(Embedder):
     def __init__(self, dim: int = 256) -> None:
         self.dim = dim
 
-    def embed(self, text: str) -> list[float]:
+    async def embed(self, text: str) -> list[float]:
         vec = [0.0] * self.dim
         for feat in _features(text):
             digest = hashlib.md5(feat.encode("utf-8")).digest()

@@ -2,7 +2,7 @@
 
 from morainet.core import Agent, AgentResult, Message, Usage
 from morainet.debug import Debugger
-from morainet.memory import LongMemory, ShortMemory
+from morainet.memory import CompositeMemory, LongMemory, ShortMemory
 from morainet.mcp import MCPClient
 from morainet.multiagent import Pipeline, Route, Router, Stage, TeamResult
 from morainet.observability.hooks import Hook
@@ -29,6 +29,7 @@ __all__ = [
     "Usage",
     "Tool",
     "tool",
+    "CompositeMemory",
     "ShortMemory",
     "LongMemory",
     "Workflow",

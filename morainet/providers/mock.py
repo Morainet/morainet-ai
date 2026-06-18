@@ -28,6 +28,7 @@ class MockProvider(Provider):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> ChatResponse:
         if self._handler is not None:
             return self._handler(messages, tools)

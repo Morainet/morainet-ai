@@ -25,11 +25,11 @@ class LongMemory(Memory):
         # Only user/assistant content is worth remembering long-term.
         if not message.content or message.role not in (Role.USER, Role.ASSISTANT):
             return
-        embedding = self.embedder.embed(message.content)
+        embedding = await self.embedder.embed(message.content)
         await self.store.upsert(message.content, embedding, {"role": message.role.value})
 
     async def get_context(self, query: str, limit: int = 10) -> list[Message]:
-        embedding = self.embedder.embed(query)
+        embedding = await self.embedder.embed(query)
         hits = await self.store.search(embedding, top_k=limit)
         return [
             Message.system(f"[memory] {h['text']}")

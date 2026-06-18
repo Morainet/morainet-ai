@@ -110,6 +110,7 @@ class ClaudeProvider(Provider):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> ChatResponse:
         system, converted = to_anthropic(messages)
         payload: dict[str, Any] = {

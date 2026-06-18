@@ -22,11 +22,11 @@ def _ollama_up() -> bool:
 
 
 @pytest.mark.skipif(not _ollama_up(), reason="ollama not running")
-def test_ollama_embedder_live():
+async def test_ollama_embedder_live():
     from morainet.memory import OllamaEmbedder
 
     model = os.getenv("MORAINET_EMBED_MODEL", "nomic-embed-text")
-    vec = OllamaEmbedder(model=model).embed("hello world")
+    vec = await OllamaEmbedder(model=model).embed("hello world")
     assert isinstance(vec, list) and len(vec) > 0
     assert all(isinstance(x, float) for x in vec[:5])
 
@@ -43,8 +43,8 @@ async def test_long_memory_with_real_embedder():
 
 
 @pytest.mark.skipif(not os.getenv("MORAINET_OPENAI_API_KEY"), reason="no OpenAI key")
-def test_openai_embedder_live():
+async def test_openai_embedder_live():
     from morainet.memory import OpenAIEmbedder
 
-    vec = OpenAIEmbedder().embed("hello world")
+    vec = await OpenAIEmbedder().embed("hello world")
     assert isinstance(vec, list) and len(vec) > 0

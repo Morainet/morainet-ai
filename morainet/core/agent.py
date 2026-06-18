@@ -21,6 +21,7 @@ from morainet.reasoning.base import (
     ApproveCallback,
     ReasoningStrategy,
     enforce_budget,
+    enforce_consecutive_errors,
     make_result,
     run_tool_calls,
 )
@@ -120,11 +121,11 @@ class Agent:
         return result
 
     async def astream(self, query: str) -> AsyncIterator[str]:
-        """Stream the final answer. Tool calls are resolved before streaming."""
+        """Stream the final answer. Multi-round tool calls are resolved first."""
         ctx = await self._prepare_context(query)
         await self.hooks.run_start(ctx)
 
-        for _ in range(self.max_steps):
+        for step_no in range(self.max_steps):
             response = await self.provider.chat(ctx.messages, self.registry.schemas() or None)
             ctx.add_usage(response.usage)
             ctx.add_message(response.message)
@@ -137,6 +138,7 @@ class Agent:
                     chunks.append(token)
                     yield token
                 answer = "".join(chunks) or (response.message.content or "")
+                logger.debug(f"[{ctx.trace_id}] stream finished in {step_no + 1} step(s)")
                 await self.hooks.run_end(ctx, make_result(ctx, answer))
                 await self._remember(query, answer)
                 return
@@ -144,6 +146,7 @@ class Agent:
             await run_tool_calls(
                 self.registry, ctx, response.message.tool_calls, self.hooks, self.approve_tool
             )
+            enforce_consecutive_errors(self.max_consecutive_errors, ctx)
 
         raise MaxStepsExceededError(
             f"Agent did not converge within max_steps={self.max_steps}"

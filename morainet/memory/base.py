@@ -22,7 +22,7 @@ class Embedder(ABC):
     """Turns text into a dense vector."""
 
     @abstractmethod
-    def embed(self, text: str) -> list[float]: ...
+    async def embed(self, text: str) -> list[float]: ...
 
 
 class VectorStore(ABC):

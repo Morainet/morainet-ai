@@ -17,15 +17,22 @@ class Provider(ABC):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> ChatResponse:
-        """Single (non-streaming) completion."""
+        """Single (non-streaming) completion.
+
+        ``response_format`` is an optional vendor-neutral schema shape, e.g.
+        ``{"type": "json_object"}`` or ``{"type": "json_schema", "json_schema": {...}}``.
+        Providers that support structured output honour it; others ignore it.
+        """
 
     async def stream(
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> AsyncIterator[str]:
         """Token stream. Default falls back to a single chunk from ``chat``."""
-        response = await self.chat(messages, tools)
+        response = await self.chat(messages, tools, response_format=response_format)
         if response.message.content:
             yield response.message.content

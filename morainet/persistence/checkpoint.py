@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
@@ -91,17 +92,21 @@ class SQLiteCheckpointStore(CheckpointStore):
         self._conn.commit()
 
     async def save(self, checkpoint: Checkpoint) -> None:
-        self._conn.execute(
+        await asyncio.to_thread(
+            self._conn.execute,
             "INSERT OR REPLACE INTO checkpoints (trace_id, data) VALUES (?, ?)",
             (checkpoint.trace_id, checkpoint.model_dump_json()),
         )
-        self._conn.commit()
+        await asyncio.to_thread(self._conn.commit)
 
     async def load(self, trace_id: str) -> Checkpoint | None:
-        row = self._conn.execute(
-            "SELECT data FROM checkpoints WHERE trace_id = ?", (trace_id,)
-        ).fetchone()
-        return Checkpoint.model_validate_json(row[0]) if row else None
+        def _load() -> Checkpoint | None:
+            row = self._conn.execute(
+                "SELECT data FROM checkpoints WHERE trace_id = ?", (trace_id,)
+            ).fetchone()
+            return Checkpoint.model_validate_json(row[0]) if row else None
+
+        return await asyncio.to_thread(_load)
 
     def close(self) -> None:
         self._conn.close()

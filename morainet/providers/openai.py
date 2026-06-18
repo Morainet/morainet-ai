@@ -95,6 +95,7 @@ class OpenAIProvider(Provider):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> ChatResponse:
         payload: dict[str, Any] = {
             "model": self.model,
@@ -102,6 +103,8 @@ class OpenAIProvider(Provider):
         }
         if tools:
             payload["tools"] = [{"type": "function", "function": s} for s in tools]
+        if response_format:
+            payload["response_format"] = response_format
 
         headers = {"Authorization": f"Bearer {self.api_key}"}
 
@@ -130,6 +133,7 @@ class OpenAIProvider(Provider):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> AsyncIterator[str]:
         payload: dict[str, Any] = {
             "model": self.model,
@@ -138,6 +142,8 @@ class OpenAIProvider(Provider):
         }
         if tools:
             payload["tools"] = [{"type": "function", "function": s} for s in tools]
+        if response_format:
+            payload["response_format"] = response_format
 
         headers = {"Authorization": f"Bearer {self.api_key}"}
 

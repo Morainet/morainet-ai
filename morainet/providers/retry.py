@@ -43,11 +43,12 @@ class RetryingProvider(Provider):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> ChatResponse:
         attempt = 0
         while True:
             try:
-                return await self.inner.chat(messages, tools)
+                return await self.inner.chat(messages, tools, response_format=response_format)
             except self.policy.retry_on as exc:
                 if attempt >= self.policy.max_retries:
                     raise
@@ -63,5 +64,6 @@ class RetryingProvider(Provider):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> AsyncIterator[str]:
-        return self.inner.stream(messages, tools)
+        return self.inner.stream(messages, tools, response_format=response_format)

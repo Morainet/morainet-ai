@@ -16,7 +16,7 @@ class FlakyProvider(Provider):
         self.error = error
         self.attempts = 0
 
-    async def chat(self, messages, tools=None):
+    async def chat(self, messages, tools=None, response_format=None):
         self.attempts += 1
         if self.attempts <= self.fails:
             raise self.error

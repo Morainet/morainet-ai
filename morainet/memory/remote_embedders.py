@@ -26,7 +26,7 @@ class OllamaEmbedder(Embedder):
         self.base_url = (base_url or settings.ollama_base_url).rstrip("/")
         self.timeout = timeout or settings.request_timeout
 
-    def embed(self, text: str) -> list[float]:
+    async def embed(self, text: str) -> list[float]:
         try:
             resp = httpx.post(
                 f"{self.base_url}/api/embeddings",
@@ -58,7 +58,7 @@ class OpenAIEmbedder(Embedder):
         if not self.api_key:
             raise AuthError("OpenAI API key not set (MORAINET_OPENAI_API_KEY).")
 
-    def embed(self, text: str) -> list[float]:
+    async def embed(self, text: str) -> list[float]:
         try:
             resp = httpx.post(
                 f"{self.base_url}/embeddings",

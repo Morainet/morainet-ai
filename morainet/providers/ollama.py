@@ -69,6 +69,7 @@ class OllamaProvider(Provider):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> ChatResponse:
         payload: dict[str, Any] = {
             "model": self.model,
@@ -77,6 +78,8 @@ class OllamaProvider(Provider):
         }
         if tools:
             payload["tools"] = [{"type": "function", "function": s} for s in tools]
+        if response_format:
+            payload["format"] = response_format
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -95,6 +98,7 @@ class OllamaProvider(Provider):
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
     ) -> AsyncIterator[str]:
         payload: dict[str, Any] = {
             "model": self.model,

@@ -1,4 +1,5 @@
 from morainet.memory.base import Embedder, Memory, VectorStore
+from morainet.memory.composite import CompositeMemory
 from morainet.memory.embeddings import HashEmbedder
 from morainet.memory.long_memory import LongMemory
 from morainet.memory.remote_embedders import OllamaEmbedder, OpenAIEmbedder
@@ -10,6 +11,7 @@ __all__ = [
     "Memory",
     "Embedder",
     "VectorStore",
+    "CompositeMemory",
     "ShortMemory",
     "LongMemory",
     "SummarizingMemory",
