@@ -9,6 +9,7 @@ production use.
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -21,6 +22,7 @@ from morainet.exceptions import (
     ProviderTimeoutError,
     RateLimitError,
 )
+from morainet.providers._streaming import parse_gemini_sse_line
 from morainet.providers.base import Provider
 
 
@@ -155,3 +157,52 @@ class GeminiProvider(Provider):
             raise ProviderError(f"{resp.status_code}: {resp.text}")
 
         return parse_response(resp.json(), self.model)
+
+    async def stream(
+        self,
+        messages: list[Message],
+        tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
+    ) -> AsyncIterator[str]:
+        system, contents = to_gemini(messages)
+        payload: dict[str, Any] = {"contents": contents}
+        if system:
+            payload["systemInstruction"] = system
+        if tools:
+            payload["tools"] = [
+                {
+                    "function_declarations": [
+                        {
+                            "name": s["name"],
+                            "description": s.get("description", ""),
+                            "parameters": s["parameters"],
+                        }
+                        for s in tools
+                    ]
+                }
+            ]
+
+        url = f"{self.base_url}/v1beta/models/{self.model}:streamGenerateContent"
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                async with client.stream(
+                    "POST", url, json=payload, params={"key": self.api_key}
+                ) as resp:
+                    if resp.status_code >= 400:
+                        body = (await resp.aread()).decode("utf-8", "replace")
+                        if resp.status_code in (401, 403):
+                            raise AuthError(body)
+                        if resp.status_code == 429:
+                            raise RateLimitError(body)
+                        raise ProviderError(f"{resp.status_code}: {body}")
+
+                    async for line in resp.aiter_lines():
+                        delta = parse_gemini_sse_line(line)
+                        if delta:
+                            yield delta
+        except ProviderError:
+            raise
+        except httpx.TimeoutException as exc:
+            raise ProviderTimeoutError(str(exc)) from exc
+        except httpx.HTTPError as exc:
+            raise ProviderError(str(exc)) from exc

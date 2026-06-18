@@ -6,6 +6,8 @@ against the real endpoint before production use.
 
 from __future__ import annotations
 
+import json
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -18,6 +20,7 @@ from morainet.exceptions import (
     ProviderTimeoutError,
     RateLimitError,
 )
+from morainet.providers._streaming import parse_claude_sse_event
 from morainet.providers.base import Provider
 
 _STOP_REASON_MAP = {"end_turn": "stop", "max_tokens": "length", "tool_use": "tool_calls"}
@@ -154,3 +157,70 @@ class ClaudeProvider(Provider):
             raise ProviderError(f"{resp.status_code}: {resp.text}")
 
         return parse_response(resp.json(), self.model)
+
+    async def stream(
+        self,
+        messages: list[Message],
+        tools: list[dict[str, Any]] | None = None,
+        response_format: dict[str, Any] | None = None,
+    ) -> AsyncIterator[str]:
+        system, converted = to_anthropic(messages)
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+            "messages": converted,
+            "stream": True,
+        }
+        if system:
+            payload["system"] = system
+        if tools:
+            payload["tools"] = [
+                {
+                    "name": s["name"],
+                    "description": s.get("description", ""),
+                    "input_schema": s["parameters"],
+                }
+                for s in tools
+            ]
+
+        headers = {
+            "x-api-key": self.api_key or "",
+            "anthropic-version": self.api_version,
+            "content-type": "application/json",
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                async with client.stream(
+                    "POST", f"{self.base_url}/v1/messages", json=payload, headers=headers
+                ) as resp:
+                    if resp.status_code >= 400:
+                        body = (await resp.aread()).decode("utf-8", "replace")
+                        if resp.status_code == 401:
+                            raise AuthError(body)
+                        if resp.status_code == 429:
+                            raise RateLimitError(body)
+                        raise ProviderError(f"{resp.status_code}: {body}")
+
+                    event_type: str | None = None
+                    async for line in resp.aiter_lines():
+                        stripped = line.strip()
+                        if not stripped:
+                            continue
+                        if stripped.startswith("event:"):
+                            event_type = stripped[len("event:"):].strip()
+                        elif stripped.startswith("data:"):
+                            payload_str = stripped[len("data:"):].strip()
+                            try:
+                                data = json.loads(payload_str)
+                            except json.JSONDecodeError:
+                                continue
+                            delta = parse_claude_sse_event(event_type or "", data)
+                            if delta:
+                                yield delta
+        except ProviderError:
+            raise
+        except httpx.TimeoutException as exc:
+            raise ProviderTimeoutError(str(exc)) from exc
+        except httpx.HTTPError as exc:
+            raise ProviderError(str(exc)) from exc

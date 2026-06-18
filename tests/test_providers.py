@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from morainet.core.models import Message, Role, ToolCall
 from morainet.providers import DeepSeekProvider
-from morainet.providers._streaming import parse_ollama_ndjson_line, parse_openai_sse_line
+from morainet.providers._streaming import (
+    parse_claude_sse_event,
+    parse_gemini_sse_line,
+    parse_ollama_ndjson_line,
+    parse_openai_sse_line,
+)
 from morainet.providers.claude import parse_response as claude_parse
 from morainet.providers.claude import to_anthropic
 from morainet.providers.gemini import parse_response as gemini_parse
@@ -118,3 +123,44 @@ def test_ollama_ndjson_parser():
     assert parse_ollama_ndjson_line('{"message":{"content":"Hi"},"done":false}') == "Hi"
     assert parse_ollama_ndjson_line('{"message":{"content":""},"done":true}') is None
     assert parse_ollama_ndjson_line("") is None
+
+
+def test_claude_sse_parser():
+    # text_delta yields content
+    assert (
+        parse_claude_sse_event(
+            "content_block_delta",
+            {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Hi"}},
+        )
+        == "Hi"
+    )
+    # non-text delta (e.g. input_json_delta) yields None
+    assert (
+        parse_claude_sse_event(
+            "content_block_delta",
+            {"type": "content_block_delta", "index": 0, "delta": {"type": "input_json_delta", "partial_json": "{"}},
+        )
+        is None
+    )
+    # message_start yields None
+    assert parse_claude_sse_event("message_start", {"type": "message_start", "message": {}}) is None
+    # message_stop yields None
+    assert parse_claude_sse_event("message_stop", {"type": "message_stop"}) is None
+
+
+def test_gemini_sse_parser():
+    assert (
+        parse_gemini_sse_line(
+            'data: {"candidates":[{"content":{"role":"model","parts":[{"text":"Hi"}]}}]}'
+        )
+        == "Hi"
+    )
+    assert (
+        parse_gemini_sse_line(
+            'data: {"candidates":[{"content":{"parts":[{"text":"world"}]}}]}'
+        )
+        == "world"
+    )
+    assert parse_gemini_sse_line("") is None
+    assert parse_gemini_sse_line("not a data line") is None
+    assert parse_gemini_sse_line('data: {"candidates":[]}') is None
