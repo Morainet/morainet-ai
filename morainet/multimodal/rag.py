@@ -149,20 +149,20 @@ class SimpleImageTextEncoder(ImageTextEncoder):
         self.captioner = captioner
 
     async def embed_text(self, text: str) -> list[float]:
-        return await self.embedder.embed(text)
+        return await self.embedder.embed(text)  # type: ignore[no-any-return]
 
     async def embed_image(self, image_source: str | Path | bytes) -> list[float]:
         if self.captioner is None:
             raise RuntimeError("SimpleImageTextEncoder requires a captioner for image embedding")
         caption = await self.captioner.caption(image_source)
-        return await self.embedder.embed(caption)
+        return await self.embedder.embed(caption)  # type: ignore[no-any-return]
 
     async def embed_multimodal(self, text: str, image_source: str | Path | bytes | None = None) -> list[float]:
         if image_source is None:
             return await self.embed_text(text)
         caption = await self.captioner.caption(image_source) if self.captioner else ""
         combined = f"{text}\n\n[Image description]: {caption}"
-        return await self.embedder.embed(combined)
+        return await self.embedder.embed(combined)  # type: ignore[no-any-return]
 
 
 # ---------------------------------------------------------------------------

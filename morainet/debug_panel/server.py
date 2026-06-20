@@ -508,13 +508,13 @@ def _build_panel_html() -> str:
 # ─────────────────────────────────────────────────────────────────────────
 
 
-def _json_response(data: Any, status: int = 200) -> tuple[int, dict, str]:
+def _json_response(data: Any, status: int = 200) -> tuple[int, dict[str, Any], str]:
     body = json.dumps(data, indent=2, ensure_ascii=False, default=str)
     headers = {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}
     return status, headers, body
 
 
-def _serve_static(path: str) -> tuple[int, dict, str]:
+def _serve_static(path: str) -> tuple[int, dict[str, Any], str]:
     """Serve static files (only used for API; HTML is embedded)."""
     static_dir = Path(__file__).parent / "static"
     file_path = (static_dir / path).resolve()
@@ -529,10 +529,10 @@ def _serve_static(path: str) -> tuple[int, dict, str]:
         ".svg": "image/svg+xml",
     }.get(file_path.suffix, "application/octet-stream")
     body = file_path.read_bytes()
-    return 200, {"Content-Type": content_type}, body
+    return 200, {"Content-Type": content_type}, body  # type: ignore[return-value]
 
 
-def handle_request(method: str, path: str) -> tuple[int, dict, str | bytes]:
+def handle_request(method: str, path: str) -> tuple[int, dict[str, Any], str | bytes]:
     """Route HTTP requests to API handlers or static files."""
     from morainet.debug_panel import get_panel_store
 
@@ -606,7 +606,7 @@ def start_server(host: str = "127.0.0.1", port: int = 8080) -> None:
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
     class PanelHandler(BaseHTTPRequestHandler):
-        def do_GET(self):
+        def do_GET(self) -> None:
             status_code, headers, body = handle_request("GET", self.path)
             self.send_response(status_code)
             for k, v in headers.items():
@@ -617,7 +617,7 @@ def start_server(host: str = "127.0.0.1", port: int = 8080) -> None:
             else:
                 self.wfile.write(body.encode("utf-8"))
 
-        def do_POST(self):
+        def do_POST(self) -> None:
             status_code, headers, body = handle_request("POST", self.path)
             self.send_response(status_code)
             for k, v in headers.items():
@@ -628,7 +628,7 @@ def start_server(host: str = "127.0.0.1", port: int = 8080) -> None:
             else:
                 self.wfile.write(body.encode("utf-8"))
 
-        def log_message(self, format, *args):
+        def log_message(self, format: str, *args: Any) -> None:
             """Suppress default logging, use our own."""
             pass
 

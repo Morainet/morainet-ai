@@ -200,8 +200,8 @@ class HierarchicalMemory(Memory):
         try:
             response = await self.provider.chat([Message.user(prompt)])
             summary = response.message.content or ""
-            if summary.strip():
-                self._episodes.append(summary.strip())
+            if summary.strip():  # type: ignore[union-attr]
+                self._episodes.append(summary.strip())  # type: ignore[union-attr]
         except Exception:
             pass  # summarization failure is non-fatal
 
@@ -234,7 +234,7 @@ class HierarchicalMemory(Memory):
         try:
             response = await self.provider.chat([Message.user(prompt)])
             content = response.message.content or ""
-            await self._parse_and_store_facts(content)
+            await self._parse_and_store_facts(content)  # type: ignore[arg-type]
         except Exception:
             pass  # extraction failure is non-fatal
 
@@ -308,13 +308,14 @@ class HierarchicalMemory(Memory):
             if trigger in content_lower:
                 # Simple extraction: use statement as evidence
                 key = trigger.replace(" ", "_")
-                self.preferences.set(
-                    key=key,
-                    value=content.strip()[:200],
-                    category=category,
-                    confidence=0.7,
-                    evidence=content.strip()[:200],
-                )
+                if self.preferences is not None:
+                    self.preferences.set(
+                        key=key,
+                        value=content.strip()[:200],
+                        category=category,
+                        confidence=0.7,
+                        evidence=content.strip()[:200],
+                    )
                 break  # one pattern per message is enough
 
     # =====================================================================

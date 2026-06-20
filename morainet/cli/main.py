@@ -87,10 +87,10 @@ def cmd_run(args: argparse.Namespace) -> None:
             provider = OpenAIProvider()
         elif provider_name == "claude":
             from morainet import ClaudeProvider
-            provider = ClaudeProvider()
+            provider = ClaudeProvider()  # type: ignore[assignment]
         elif provider_name == "gemini":
             from morainet import GeminiProvider
-            provider = GeminiProvider()
+            provider = GeminiProvider()  # type: ignore[assignment]
         elif provider_name == "deepseek":
             from morainet import DeepSeekProvider
             provider = DeepSeekProvider()
@@ -190,10 +190,10 @@ def cmd_trace_export(args: argparse.Namespace) -> None:
             _store = SQLiteCheckpointStore()
         elif store_type == "file":
             from morainet import FileCheckpointStore
-            _store = FileCheckpointStore(args.store_path or settings.checkpoint_file)
+            _store = FileCheckpointStore(args.store_path or getattr(settings, 'checkpoint_file', ''))  # type: ignore[assignment]
         elif store_type == "redis":
             from morainet import RedisCheckpointStore
-            _store = RedisCheckpointStore()
+            _store = RedisCheckpointStore()  # type: ignore[assignment]
         else:
             print(f"Unknown store type: {store_type}")
             return
@@ -362,7 +362,7 @@ def _generate_tool_schema(name: str, func: Any) -> dict[str, Any]:
 
 def _type_to_json_type(ptype: Any) -> str:
     """Map Python type to JSON Schema type."""
-    mapping: dict = {
+    mapping: dict[Any, str] = {
         str: "string", int: "integer", float: "number",
         bool: "boolean", list: "array", dict: "object",
     }
@@ -435,7 +435,7 @@ def cmd_workflow(args: argparse.Namespace) -> None:
         print(f"Unknown format: {fmt}")
 
 
-def _dag_to_json(wf: Any) -> dict:
+def _dag_to_json(wf: Any) -> dict[str, Any]:
     """Serialize DAG to JSON for visualization."""
     edges = wf._edges()
     levels = wf.topological_levels()

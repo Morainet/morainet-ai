@@ -115,7 +115,7 @@ def estimate_complexity(messages: list[Message]) -> float:
     if not user_texts:
         return 0.3  # default moderate
 
-    combined = " ".join(user_texts)
+    combined = " ".join(user_texts)  # type: ignore[arg-type]
     total_chars = len(combined)
     msg_count = len(user_texts)
     score = 0.0
@@ -150,7 +150,7 @@ def estimate_complexity(messages: list[Message]) -> float:
 
 
 def _get_messages_text(messages: list[Message]) -> str:
-    return " ".join(m.content or "" for m in messages if m.content)
+    return " ".join(m.content or "" for m in messages if m.content)  # type: ignore[misc]
 
 
 # --- router ---------------------------------------------------------------

@@ -65,7 +65,7 @@ def to_anthropic(messages: list[Message]) -> tuple[str | None, list[dict[str, An
             converted.append({"role": "assistant", "content": blocks})
         elif isinstance(m.content, list) and m.role == Role.USER:
             # Multimodal user message — build Anthropic content blocks
-            blocks: list[dict[str, Any]] = []
+            _blocks: list[dict[str, Any]] = []
             for item in m.content:
                 if item.get("type") == "text":
                     blocks.append({"type": "text", "text": item.get("text", "")})

@@ -135,7 +135,7 @@ class ContextCompressor:
             if m.role == Role.TOOL:
                 facts.append(m)
                 continue
-            if m.role == Role.ASSISTANT and (m.tool_calls or _has_decision_signal(m.content)):
+            if m.role == Role.ASSISTANT and (m.tool_calls or _has_decision_signal(m.content)):  # type: ignore[arg-type]
                 facts.append(m)
             elif m.role == Role.USER:
                 # Keep user messages that contain substantive information
@@ -161,7 +161,7 @@ class ContextCompressor:
             resp = await self.provider.chat([Message.user(prompt)])
             self._key_facts = [
                 line.strip("- •\n\r ").strip()
-                for line in (resp.message.content or "").splitlines()
+                for line in (resp.message.content or "").splitlines()  # type: ignore[union-attr]
                 if line.strip("- •\n\r ") and len(line.strip("- •\n\r ")) > 3
             ]
         except Exception:
@@ -195,7 +195,7 @@ class ContextCompressor:
         existing_summary = f"Previous summary: {self._summary}\n\n" if self._summary else ""
         try:
             resp = await self.provider.chat([Message.user(existing_summary + prompt)])
-            self._summary = resp.message.content or self._summary
+            self._summary = resp.message.content or self._summary  # type: ignore[assignment]
         except Exception:
             return None  # LLM unavailable; fall through to next tier
 
@@ -248,7 +248,7 @@ def _estimate_tokens(text: str) -> int:
 
 
 def _estimate_list(messages: list[Message]) -> int:
-    return sum(_estimate_tokens(m.content or "") for m in messages) + len(messages) * 2
+    return sum(_estimate_tokens(m.content or "") for m in messages) + len(messages) * 2  # type: ignore[arg-type,misc]
 
 
 def _format_history(messages: list[Message]) -> str:

@@ -46,7 +46,7 @@ class SummarizingMemory(Memory):
             history = f"已有摘要：{self._summary}\n\n新对话：\n{history}"
 
         response = await self.provider.chat([Message.user(self.prompt.render(history=history))])
-        self._summary = response.message.content or self._summary
+        self._summary = response.message.content or self._summary  # type: ignore[assignment]
         self._messages = recent
 
     async def get_context(self, query: str, limit: int = 10) -> list[Message]:

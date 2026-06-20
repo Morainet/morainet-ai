@@ -14,7 +14,7 @@ from enum import Enum
 from typing import Any
 
 from morainet.core.agent import Agent
-from morainet.multiagent.factory import AgentFactory, SpawnedAgent
+from morainet.multiagent.factory import AgentFactory, AgentLifecycle, SpawnedAgent
 
 
 class PoolStrategy(str, Enum):
@@ -111,14 +111,14 @@ class AgentPool:
             if agent is not None:
                 self._idle = [a for a in self._idle if a.agent_id != agent.agent_id]
                 self._busy[agent.agent_id] = agent
-                agent.lifecycle = "busy"
+                agent.lifecycle = AgentLifecycle.BUSY
                 return agent.agent
 
             # Need to create a new one
             if len(self._idle) + len(self._busy) < self.config.max_size:
                 agent = self._create_agent()
                 self._busy[agent.agent_id] = agent
-                agent.lifecycle = "busy"
+                agent.lifecycle = AgentLifecycle.BUSY
                 return agent.agent
 
         # Pool full — wait for a release
@@ -128,7 +128,7 @@ class AgentPool:
                 if agent is not None:
                     self._idle = [a for a in self._idle if a.agent_id != agent.agent_id]
                     self._busy[agent.agent_id] = agent
-                    agent.lifecycle = "busy"
+                    agent.lifecycle = AgentLifecycle.BUSY
                     return agent.agent
             await asyncio.sleep(0.1)
 
@@ -138,7 +138,7 @@ class AgentPool:
             agent = self._busy.pop(agent_id, None)
             if agent is None:
                 return
-            agent.lifecycle = "idle"
+            agent.lifecycle = AgentLifecycle.IDLE
             agent.task_count += 1
             self._idle.append(agent)
 
@@ -179,7 +179,7 @@ class AgentPool:
                             "error": None,
                         }
                     finally:
-                        await self.release(agent.agent_id)
+                        await self.release(agent.agent_id)  # type: ignore[attr-defined]
                 except Exception as e:
                     return {"query": query, "agent_id": "", "result": "", "error": str(e)}
 

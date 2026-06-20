@@ -179,7 +179,7 @@ class A2AChannel:
         ))
         reply = await self.recv(timeout=timeout)
         if reply and reply.msg_type == A2AMessageType.HANDSHAKE:
-            return reply.payload
+            return reply.payload  # type: ignore[no-any-return]
         return None
 
     # -- lifecycle --

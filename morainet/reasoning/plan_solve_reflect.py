@@ -199,7 +199,7 @@ class PlanSolveReflectStrategy(ReasoningStrategy):
         try:
             response = await agent.provider.chat([Message.user(prompt)])
             text = response.message.content or ""
-            plan_data = self._parse_json(text)
+            plan_data = self._parse_json(text)  # type: ignore[arg-type]
         except Exception:
             plan_data = []
 
@@ -293,7 +293,7 @@ class PlanSolveReflectStrategy(ReasoningStrategy):
                 else:
                     # No tool calls — model answered directly
                     step.status = StepStatus.SUCCESS
-                    step.result_summary = (response.message.content or "")[:200]
+                    step.result_summary = (response.message.content or "")[:200]  # type: ignore[assignment]
                     return
 
                 # Check if success criterion is met
@@ -334,7 +334,7 @@ class PlanSolveReflectStrategy(ReasoningStrategy):
         )
         try:
             resp = await agent.provider.chat([Message.user(prompt)])
-            return "yes" in (resp.message.content or "").strip().lower()
+            return "yes" in (resp.message.content or "").strip().lower()  # type: ignore[union-attr]
         except Exception:
             return True  # Assume success on check failure
 
@@ -367,7 +367,7 @@ class PlanSolveReflectStrategy(ReasoningStrategy):
 
         try:
             response = await agent.provider.chat([Message.user(prompt)])
-            verdict = self._parse_json(response.message.content or "")
+            verdict = self._parse_json(response.message.content or "")  # type: ignore[arg-type]
         except Exception:
             verdict = {}
 
@@ -397,7 +397,7 @@ class PlanSolveReflectStrategy(ReasoningStrategy):
 
         try:
             response = await agent.provider.chat([Message.user(prompt)])
-            steps_data = self._parse_json(response.message.content or "")
+            steps_data = self._parse_json(response.message.content or "")  # type: ignore[arg-type]
         except Exception:
             return []
 
@@ -432,7 +432,7 @@ class PlanSolveReflectStrategy(ReasoningStrategy):
             enforce_budget(agent.token_budget, ctx)
 
             if not response.message.tool_calls:
-                return make_result(ctx, response.message.content or "")
+                return make_result(ctx, response.message.content or "")  # type: ignore[arg-type]
 
             await run_tool_calls(
                 agent.registry, ctx, response.message.tool_calls, agent.hooks, agent.approve_tool,

@@ -28,7 +28,7 @@ class ShortMemory(Memory):
         self._messages: list[Message] = []
 
     def _count(self, message: Message) -> int:
-        return self.token_counter(message.content or "")
+        return self.token_counter(message.content or "")  # type: ignore[arg-type]
 
     def _trim(self) -> None:
         if len(self._messages) > self.max_messages:

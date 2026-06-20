@@ -114,28 +114,28 @@ class MultimodalAdapter:
                 # Build OpenAI multimodal content array
                 blocks: list[dict[str, Any]] = []
                 for item in m.content:  # type: ignore[union-attr]
-                    if item.get("type") == "image_base64":
+                    if item.get("type") == "image_base64":  # type: ignore[union-attr]
                         # Normalize to standard image_url + data URI
-                        b64 = item.get("data", "")
-                        media = item.get("media_type", "image/jpeg")
+                        b64 = item.get("data", "")  # type: ignore[union-attr]
+                        media = item.get("media_type", "image/jpeg")  # type: ignore[union-attr]
                         data_uri = f"data:{media};base64,{b64}"
                         blocks.append({
                             "type": "image_url",
-                            "image_url": {"url": data_uri, "detail": item.get("detail", "auto")},
+                            "image_url": {"url": data_uri, "detail": item.get("detail", "auto")},  # type: ignore[union-attr]
                         })
-                    elif item.get("type") == "audio":
+                    elif item.get("type") == "audio":  # type: ignore[union-attr]
                         # OpenAI doesn't support native audio input blocks
-                        audio = item.get("audio", {})
+                        audio = item.get("audio", {})  # type: ignore[union-attr]
                         transcript = audio.get("transcript", "")
                         if transcript:
                             blocks.append({"type": "text", "text": f"[Audio transcript]: {transcript}"})
                         else:
                             blocks.append({"type": "text", "text": f"[Audio: {audio.get('format', 'unknown')}]"})
-                    elif item.get("type") == "file":
-                        f = item.get("file", {})
+                    elif item.get("type") == "file":  # type: ignore[union-attr]
+                        f = item.get("file", {})  # type: ignore[union-attr]
                         blocks.append({"type": "text", "text": f"[File: {f.get('file_name', 'unknown')}]"})
                     else:
-                        blocks.append(item)
+                        blocks.append(item)  # type: ignore[arg-type]
                 msg["content"] = blocks if blocks else ""
             else:
                 msg["content"] = m.content or ""
@@ -207,7 +207,7 @@ class MultimodalAdapter:
                 blocks = self._build_anthropic_blocks(m.content)  # type: ignore[arg-type]
                 converted.append({"role": "user", "content": blocks})
             else:
-                text = m.content if isinstance(m.content, str) else _extract_text(m.content or [])  # type: ignore[arg-type]
+                text = m.content if isinstance(m.content, str) else _extract_text(m.content or [])
                 converted.append({"role": m.role.value, "content": text or ""})
 
         system = "\n\n".join(system_parts) if system_parts else None
@@ -322,7 +322,7 @@ class MultimodalAdapter:
                 parts = self._build_gemini_parts(m.content)  # type: ignore[arg-type]
                 contents.append({"role": role_str, "parts": parts})
             else:
-                text = m.content if isinstance(m.content, str) else _extract_text(m.content or [])  # type: ignore[arg-type]
+                text = m.content if isinstance(m.content, str) else _extract_text(m.content or [])
                 contents.append({"role": role_str, "parts": [{"text": text or ""}]})
 
         system = (
@@ -404,8 +404,8 @@ class MultimodalAdapter:
                 # Collect images
                 ollama_images: list[str] = []
                 for item in m.content:  # type: ignore[union-attr]
-                    if item.get("type") in ("image_url", "image"):
-                        img = item.get("image_url", {})
+                    if item.get("type") in ("image_url", "image"):  # type: ignore[union-attr,operator]  # type: ignore[union-attr]
+                        img = item.get("image_url", {})  # type: ignore[union-attr]
                         if isinstance(img, dict):
                             url = img.get("url", "")
                         else:
@@ -413,13 +413,13 @@ class MultimodalAdapter:
                         if url.startswith("data:image/"):
                             _, b64 = url.split(",", 1)
                             ollama_images.append(b64)
-                    elif item.get("type") == "image_base64":
-                        ollama_images.append(item.get("data", ""))
+                    elif item.get("type") == "image_base64":  # type: ignore[union-attr]
+                        ollama_images.append(item.get("data", ""))  # type: ignore[union-attr]
                 if ollama_images:
                     msg["images"] = ollama_images
             else:
                 msg["content"] = m.content if isinstance(m.content, str) else (
-                    _extract_text(m.content or []) if m.content else ""  # type: ignore[arg-type]
+                    _extract_text(m.content or []) if m.content else ""
                 )
 
             if m.tool_calls:

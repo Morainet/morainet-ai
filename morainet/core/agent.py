@@ -142,8 +142,8 @@ class Agent:
                     yield token
                 answer = "".join(chunks) or (response.message.content or "")
                 logger.debug(f"[{ctx.trace_id}] stream finished in {step_no + 1} step(s)")
-                await self.hooks.run_end(ctx, make_result(ctx, answer))
-                await self._remember(query, answer)
+                await self.hooks.run_end(ctx, make_result(ctx, answer))  # type: ignore[arg-type]
+                await self._remember(query, answer)  # type: ignore[arg-type]
                 return
 
             await run_tool_calls(

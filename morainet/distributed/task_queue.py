@@ -148,7 +148,7 @@ class RedisBackend(TaskBackend):
     def client(self) -> Any:
         if self._client is None:
             try:
-                import redis.asyncio as aioredis
+                import redis.asyncio as aioredis  # type: ignore[import-untyped]
             except ImportError:
                 raise ImportError(
                     "redis package required. Install: pip install morainet-ai[redis]"
@@ -242,7 +242,7 @@ class RedisBackend(TaskBackend):
 
     async def queue_length(self, queue: str) -> int:
         queue_key = self._queue_key(queue)
-        return await self.client.llen(queue_key)
+        return await self.client.llen(queue_key)  # type: ignore[no-any-return]
 
     async def close(self) -> None:
         if self._client is not None:
@@ -275,7 +275,7 @@ class RabbitMQBackend(TaskBackend):
     async def _ensure_channel(self) -> Any:
         if self._channel is None:
             try:
-                import aio_pika  # type: ignore[import-untyped]
+                import aio_pika
             except ImportError:
                 raise ImportError(
                     "aio-pika required for RabbitMQ. Install: pip install aio-pika"
@@ -313,7 +313,7 @@ class RabbitMQBackend(TaskBackend):
     async def queue_length(self, queue: str) -> int:
         channel = await self._ensure_channel()
         queue_obj = await channel.declare_queue(f"morainet.{queue}", durable=True, passive=True)
-        return queue_obj.declaration_result.message_count
+        return queue_obj.declaration_result.message_count  # type: ignore[no-any-return]
 
     async def close(self) -> None:
         if self._conn is not None:

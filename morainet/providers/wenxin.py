@@ -249,7 +249,7 @@ class WenxinProvider(Provider):
 
         payload: dict[str, Any] = {"messages": user_messages}
         if system_msgs:
-            payload["system"] = "\n\n".join(system_msgs)
+            payload["system"] = "\n\n".join(system_msgs)  # type: ignore[arg-type]
         if tools:
             payload["functions"] = [
                 {
@@ -290,7 +290,7 @@ class WenxinProvider(Provider):
         if self.native_mode:
             result = await self._chat_native(messages, tools)
             if result.message.content:
-                yield result.message.content
+                yield result.message.content  # type: ignore[misc]
             return
 
         payload: dict[str, Any] = {

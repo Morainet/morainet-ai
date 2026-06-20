@@ -145,12 +145,12 @@ class EnhancedReActStrategy(ReasoningStrategy):
             response = await agent.provider.chat(ctx.messages)
             ctx.add_usage(response.usage)
             text = response.message.content or ""
-            ctx.add_message(Message.assistant(content=text))
+            ctx.add_message(Message.assistant(content=text))  # type: ignore[arg-type]
             await agent.hooks.llm_end(ctx, response)
             enforce_budget(agent.token_budget, ctx)
 
             # Check for Final Answer
-            final = parse_final_answer(text)
+            final = parse_final_answer(text)  # type: ignore[arg-type]
             if final is not None:
                 # Phase 3: Self-verification
                 if self.verify_before_answer:
@@ -166,9 +166,9 @@ class EnhancedReActStrategy(ReasoningStrategy):
                 return make_result(ctx, final)
 
             # Parse action
-            action = parse_action(text)
+            action = parse_action(text)  # type: ignore[arg-type]
             if action is None:
-                return make_result(ctx, text.strip())
+                return make_result(ctx, text.strip())  # type: ignore[union-attr]
 
             name, args = action
             await self._execute_with_reflection(agent, ctx, name, args)
@@ -296,7 +296,7 @@ class EnhancedReActStrategy(ReasoningStrategy):
         )
         try:
             response = await agent.provider.chat([Message.user(prompt)])
-            return (response.message.content or "Try a different approach.").strip()
+            return (response.message.content or "Try a different approach.").strip()  # type: ignore[union-attr]
         except Exception:
             return "Try a different approach or tool."
 
@@ -314,7 +314,7 @@ class EnhancedReActStrategy(ReasoningStrategy):
             analysis = response.message.content or ""
             ctx.add_message(
                 Message.user(
-                    f"[Task Analysis]\n{analysis.strip()}\n\n"
+                    f"[Task Analysis]\n{analysis.strip()}\n\n"  # type: ignore[union-attr]
                     f"Now proceed with the task. Remember to verify your answer "
                     f"before giving it."
                 )
@@ -336,7 +336,7 @@ class EnhancedReActStrategy(ReasoningStrategy):
         prompt = _VERIFY_PROMPT.format(query=query, draft=draft_answer)
         try:
             resp = await agent.provider.chat([Message.user(prompt)])
-            text = (resp.message.content or "").strip()
+            text = (resp.message.content or "").strip()  # type: ignore[union-attr]
             is_ok = text.upper().startswith("OK") or text.lower().startswith("ok")
             logger.debug(f"self-verify: {'PASS' if is_ok else 'FAIL'} ({text[:80]})")
             return {"ok": is_ok, "feedback": text if not is_ok else ""}

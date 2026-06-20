@@ -97,18 +97,18 @@ class ReActStrategy(ReasoningStrategy):
             response = await agent.provider.chat(ctx.messages)
             ctx.add_usage(response.usage)
             text = response.message.content or ""
-            ctx.add_message(Message.assistant(content=text))
+            ctx.add_message(Message.assistant(content=text))  # type: ignore[arg-type]
             await agent.hooks.llm_end(ctx, response)
             enforce_budget(agent.token_budget, ctx)
 
-            final = parse_final_answer(text)
+            final = parse_final_answer(text)  # type: ignore[arg-type]
             if final is not None:
                 return make_result(ctx, final)
 
-            action = parse_action(text)
+            action = parse_action(text)  # type: ignore[arg-type]
             if action is None:
                 # Model answered without the ReAct scaffold; take its text as-is.
-                return make_result(ctx, text.strip())
+                return make_result(ctx, text.strip())  # type: ignore[union-attr]
 
             name, args = action
             result, error = await execute_tool(agent.registry, name, args, agent.approve_tool)

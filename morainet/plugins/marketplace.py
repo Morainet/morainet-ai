@@ -122,11 +122,11 @@ class PluginMarketplace:
         try:
             eps = entry_points(group=PLUGIN_META_GROUP)
         except TypeError:
-            eps = entry_points().get(PLUGIN_META_GROUP, [])  # type: ignore[assignment]
+            eps = entry_points().get(PLUGIN_META_GROUP, [])  # type: ignore[arg-type]
 
-        for ep in eps:  # type: ignore[assignment]
+        for ep in eps:
             try:
-                loader = ep.load()  # type: ignore[attr-defined]
+                loader = ep.load()
                 spec = self._resolve_spec(loader)
             except Exception:
                 continue
@@ -134,7 +134,7 @@ class PluginMarketplace:
             if spec is None:
                 continue
 
-            key = f"{ep.dist.metadata['Name']}:{spec.name}"  # type: ignore[attr-defined]
+            key = f"{ep.dist.metadata['Name']}:{spec.name}"  # type: ignore[union-attr]
             if key in self._manifests:
                 continue
 
@@ -142,7 +142,7 @@ class PluginMarketplace:
                 spec=spec,
                 installed=True,
                 enabled=True,
-                pip_package=ep.dist.metadata["Name"],  # type: ignore[attr-defined]
+                pip_package=ep.dist.metadata["Name"],  # type: ignore[union-attr]
             )
 
     def _discover_from_kind_eps(self) -> None:
@@ -151,17 +151,17 @@ class PluginMarketplace:
             try:
                 eps = entry_points(group=group)
             except TypeError:
-                eps = entry_points().get(group, [])  # type: ignore[assignment]
+                eps = entry_points().get(group, [])  # type: ignore[arg-type]
 
-            for ep in eps:  # type: ignore[assignment]
-                name = ep.name  # type: ignore[attr-defined]
-                pkg_name = getattr(ep.dist, "metadata", {}).get("Name", "") if hasattr(ep, "dist") else ""  # type: ignore[attr-defined]
+            for ep in eps:
+                name = ep.name
+                pkg_name = getattr(ep.dist, "metadata", {}).get("Name", "") if hasattr(ep, "dist") else ""
                 key = f"{pkg_name}:{name}"
 
                 if key in self._manifests:
                     # Already discovered via meta; just attach the loaded object
                     try:
-                        self._manifests[key].loaded_object = ep.load()  # type: ignore[attr-defined]
+                        self._manifests[key].loaded_object = ep.load()
                     except Exception:
                         pass
                     continue
@@ -173,7 +173,7 @@ class PluginMarketplace:
                     description=f"Third-party {kind.value} plugin: {name}",
                 )
                 try:
-                    loader = ep.load()  # type: ignore[attr-defined]
+                    loader = ep.load()
                     if callable(loader) and not isinstance(loader, type):
                         maybe_spec = self._resolve_spec(loader)
                         if maybe_spec is not None:
@@ -201,7 +201,7 @@ class PluginMarketplace:
                     return PluginSpec.from_dict(result)
                 # The loader might return the actual plugin object — check for spec attribute
                 if hasattr(result, "__morainet_plugin_spec__"):
-                    return result.__morainet_plugin_spec__
+                    return result.__morainet_plugin_spec__  # type: ignore[no-any-return]
             except Exception:
                 pass
         return None

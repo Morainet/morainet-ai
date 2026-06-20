@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
@@ -69,9 +69,9 @@ class DistributedRunTrace(BaseModel):
         dt.node_traces = {t.node_id or str(i): t for i, t in enumerate(traces)}
         return dt
 
-    def to_flat_spans(self) -> list[dict]:
+    def to_flat_spans(self) -> list[dict[str, Any]]:
         """Export all spans as a flat list (e.g. for Jaeger / OTLP)."""
-        flat: list[dict] = []
+        flat: list[dict[str, Any]] = []
         for node_id, trace in self.node_traces.items():
             for span in trace.spans:
                 flat.append({

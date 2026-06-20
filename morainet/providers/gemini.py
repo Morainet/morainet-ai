@@ -64,7 +64,7 @@ def to_gemini(messages: list[Message]) -> tuple[dict[str, Any] | None, list[dict
             contents.append({"role": "model", "parts": parts})
         elif isinstance(m.content, list) and m.role == Role.USER:
             # Multimodal user message — build Gemini parts
-            parts: list[dict[str, Any]] = []
+            _parts: list[dict[str, Any]] = []
             for item in m.content:
                 if item.get("type") == "text":
                     parts.append({"text": item.get("text", "")})

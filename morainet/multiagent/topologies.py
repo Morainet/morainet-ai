@@ -172,7 +172,7 @@ class GroupChat:
                     resp = await self.provider.chat([
                         Message.user(f"Pick next speaker from [{names_text}]. Reply with just the name.")
                     ])
-                    chosen = (resp.message.content or "").strip()
+                    chosen = (resp.message.content or "").strip()  # type: ignore[union-attr]
                     if chosen not in self._member_map:
                         chosen = names[speaker_idx % len(names)]
                     speaker = self._member_map[chosen]
@@ -461,7 +461,7 @@ class Router:
                 resp = await self.provider.chat([
                     Message.user(f"Query: {query}\n\nPick the best route from [{names_text}]. Reply with just the route name.")
                 ])
-                route_name = (resp.message.content or "").strip()
+                route_name = (resp.message.content or "").strip()  # type: ignore[union-attr]
             except Exception:
                 route_name = ""
 
@@ -477,8 +477,8 @@ class Router:
 
         # Execute
         try:
-            result = await route.agent.arun(query)
-            final = result.final_answer
+            result = await route.agent.arun(query)  # type: ignore[assignment]
+            final = result.final_answer  # type: ignore[attr-defined]
         except Exception as e:
             final = f"[Error: {e}]"
 

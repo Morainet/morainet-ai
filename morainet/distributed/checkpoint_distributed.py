@@ -72,7 +72,7 @@ class HeartbeatCheckpointStore(CheckpointStore):
     def client(self) -> Any:
         if self._client is None:
             try:
-                import redis.asyncio as aioredis
+                import redis.asyncio as aioredis  # type: ignore[import-untyped]
             except ImportError:
                 raise ImportError(
                     "redis package required. pip install morainet-ai[redis]"
@@ -118,7 +118,7 @@ class HeartbeatCheckpointStore(CheckpointStore):
     async def get_owner(self, trace_id: str) -> str | None:
         """Return the node_id that owns this trace, or ``None``."""
         owner_key = self._owner_key(trace_id)
-        return await self.client.get(owner_key)
+        return await self.client.get(owner_key)  # type: ignore[no-any-return]
 
     async def claim_orphan(self, trace_id: str, new_owner: str) -> Checkpoint | None:
         """Claim an orphaned session. Returns the checkpoint if successful."""

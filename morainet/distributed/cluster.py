@@ -312,7 +312,7 @@ class _ClusterEventRegistry:
 cluster_registry = _ClusterEventRegistry()
 
 
-def cluster_event_handler(event: str):
+def cluster_event_handler(event: str) -> Callable:  # type: ignore[type-arg]
     """Decorator: register a cluster event handler.
 
     ::
@@ -420,7 +420,7 @@ class AgentCluster:
         self._running = True
         await self._get_client()
         await self._announce("join")
-        self._rebuild_from_redis()
+        await self._rebuild_from_redis()
         self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
         self._listen_task = asyncio.create_task(self._listen_loop())
         await cluster_registry.emit("member_joined", self._self.to_dict())
@@ -472,7 +472,7 @@ class AgentCluster:
     async def _get_client(self) -> Any:
         if self._client is None:
             try:
-                import redis.asyncio as aioredis
+                import redis.asyncio as aioredis  # type: ignore[import-untyped]
             except ImportError:
                 raise ImportError("redis package required. pip install morainet-ai[redis]") from None
             self._client = aioredis.from_url(self._redis_url, decode_responses=True)

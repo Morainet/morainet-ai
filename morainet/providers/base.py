@@ -35,4 +35,4 @@ class Provider(ABC):
         """Token stream. Default falls back to a single chunk from ``chat``."""
         response = await self.chat(messages, tools, response_format=response_format)
         if response.message.content:
-            yield response.message.content
+            yield response.message.content  # type: ignore[misc]

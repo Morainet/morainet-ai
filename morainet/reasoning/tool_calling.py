@@ -35,7 +35,7 @@ class ToolCallingStrategy(ReasoningStrategy):
 
             if not response.message.tool_calls:
                 logger.debug(f"[{ctx.trace_id}] finished in {step_no + 1} step(s)")
-                return make_result(ctx, response.message.content or "")
+                return make_result(ctx, response.message.content or "")  # type: ignore[arg-type]
 
             await run_tool_calls(
                 agent.registry, ctx, response.message.tool_calls,

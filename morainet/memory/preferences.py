@@ -136,7 +136,7 @@ class UserPreferencesStore:
     def to_dict(self) -> dict[str, Any]:
         return {k: p.value for k, p in self._prefs.items()}
 
-    def to_messages(self) -> list:
+    def to_messages(self) -> list[Any]:
         """Export preferences as system messages for persona injection."""
         from morainet.core.models import Message
 
@@ -228,7 +228,7 @@ class TaskGoalStore:
     def children_of(self, parent_id: str) -> list[TaskGoal]:
         return [g for g in self._goals.values() if g.parent_goal_id == parent_id]
 
-    def to_messages(self) -> list:
+    def to_messages(self) -> list[Any]:
         """Export active goals as context injection."""
         from morainet.core.models import Message
 

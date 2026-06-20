@@ -116,7 +116,7 @@ class TaskEnvelope:
         # Try to serialise via import path; fallback to pickle
         func_code = ""
         try:
-            import cloudpickle  # type: ignore[import-untyped]
+            import cloudpickle
             func_code = base64.b64encode(cloudpickle.dumps(func)).decode()
         except ImportError:
             pass
