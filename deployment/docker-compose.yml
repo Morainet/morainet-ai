@@ -1,0 +1,160 @@
+# Morainet AI — Docker Compose 完整栈
+#
+# 功能：
+#   - Morainet Agent (FastAPI)
+#   - Redis (Checkpoint 持久化 + 缓存)
+#   - Qdrant (向量检索)
+#   - PostgreSQL (业务数据存储，可选)
+#
+# 用法：
+#   # 创建 .env 文件
+#   echo "MORAINET_OPENAI_API_KEY=sk-xxx" > .env
+#
+#   # 启动
+#   docker compose -f deployment/docker-compose.yml up -d
+#
+#   # 扩容
+#   docker compose -f deployment/docker-compose.yml up -d --scale app=3
+#
+#   # 查看日志
+#   docker compose -f deployment/docker-compose.yml logs -f app
+#
+#   # 停止并清理
+#   docker compose -f deployment/docker-compose.yml down -v
+
+version: "3.8"
+
+services:
+  # ===================== Morainet Agent =====================
+  app:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: morainet-agent
+    ports:
+      - "8000:8000"
+    environment:
+      # ── LLM Provider ──
+      - MORAINET_OPENAI_API_KEY=${MORAINET_OPENAI_API_KEY:-}
+      - MORAINET_ANTHROPIC_API_KEY=${MORAINET_ANTHROPIC_API_KEY:-}
+      - MORAINET_GEMINI_API_KEY=${MORAINET_GEMINI_API_KEY:-}
+      - MORAINET_DEEPSEEK_API_KEY=${MORAINET_DEEPSEEK_API_KEY:-}
+      - MORAINET_DEFAULT_MODEL=${MORAINET_DEFAULT_MODEL:-gpt-4o}
+      # 中国模型
+      - MORAINET_QWEN_API_KEY=${MORAINET_QWEN_API_KEY:-}
+      - MORAINET_WENXIN_API_KEY=${MORAINET_WENXIN_API_KEY:-}
+      - MORAINET_ZHIPU_API_KEY=${MORAINET_ZHIPU_API_KEY:-}
+      - MORAINET_MOONSHOT_API_KEY=${MORAINET_MOONSHOT_API_KEY:-}
+      - MORAINET_MINIMAX_API_KEY=${MORAINET_MINIMAX_API_KEY:-}
+      - MORAINET_SILICONFLOW_API_KEY=${MORAINET_SILICONFLOW_API_KEY:-}
+      # ── Ollama（本地模式） ──
+      - MORAINET_OLLAMA_BASE_URL=${MORAINET_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      # ── 通用设置 ──
+      - MORAINET_LOG_LEVEL=${MORAINET_LOG_LEVEL:-INFO}
+      - MORAINET_MAX_STEPS=${MORAINET_MAX_STEPS:-10}
+      - MORAINET_REQUEST_TIMEOUT=${MORAINET_REQUEST_TIMEOUT:-60.0}
+      - MORAINET_MAX_RETRIES=${MORAINET_MAX_RETRIES:-3}
+      # ── Checkpoint 持久化（Redis） ──
+      - MORAINET_CHECKPOINT_REDIS_URL=redis://redis:6379/0
+      - MORAINET_CHECKPOINT_REDIS_TTL=${MORAINET_CHECKPOINT_REDIS_TTL:-86400}
+      # ── 向量检索（Qdrant） ──
+      - MORAINET_VECTOR_STORE_BACKEND=${MORAINET_VECTOR_STORE_BACKEND:-qdrant}
+      - MORAINET_VECTOR_STORE_CONNECTION=http://qdrant:6333
+      - MORAINET_VECTOR_DIMENSION=${MORAINET_VECTOR_DIMENSION:-1536}
+      # ── 工程化 ──
+      - MORAINET_MAX_CONCURRENT_LLM_CALLS=${MORAINET_MAX_CONCURRENT_LLM_CALLS:-10}
+      - MORAINET_MAX_CONCURRENT_TOOL_CALLS=${MORAINET_MAX_CONCURRENT_TOOL_CALLS:-20}
+      - MORAINET_BILLING_BUDGET_USD=${MORAINET_BILLING_BUDGET_USD:-0}
+      - MORAINET_CIRCUIT_BREAKER_FAILURES=${MORAINET_CIRCUIT_BREAKER_FAILURES:-5}
+      - MORAINET_CIRCUIT_BREAKER_COOLDOWN=${MORAINET_CIRCUIT_BREAKER_COOLDOWN:-30.0}
+      # ── 推理 ──
+      - MORAINET_COMPRESS_AFTER_MESSAGES=${MORAINET_COMPRESS_AFTER_MESSAGES:-30}
+      - MORAINET_SELF_VERIFY=${MORAINET_SELF_VERIFY:-true}
+      - MORAINET_TOOL_CACHE_TTL=${MORAINET_TOOL_CACHE_TTL:-300.0}
+      # ── MCP ──
+      - MORAINET_MCP_POOL_RECONNECT=${MORAINET_MCP_POOL_RECONNECT:-true}
+      - MORAINET_MCP_CACHE_TTL=${MORAINET_MCP_CACHE_TTL:-300.0}
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+
+  # ===================== Redis =====================
+  redis:
+    image: redis:7-alpine
+    container_name: morainet-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ===================== Qdrant（向量检索） =====================
+  qdrant:
+    image: qdrant/qdrant:v1.8
+    container_name: morainet-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ===================== PostgreSQL（可选） =====================
+  postgres:
+    image: postgres:16-alpine
+    container_name: morainet-postgres
+    profiles:
+      - full
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=morainet
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-morainet}
+      - POSTGRES_DB=morainet
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U morainet"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis_data:
+  qdrant_data:
+  postgres_data:
+
+# ===================== 网络 =====================
+# Docker Compose 自动创建 default 网络，服务间自动 DNS 解析
