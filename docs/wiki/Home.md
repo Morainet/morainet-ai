@@ -16,7 +16,7 @@
 - **可插拔推理** —— ToolCalling（默认）/ ReAct
 - **流式输出** —— `agent.astream()`
 - **记忆** —— 短期窗口 / 长期向量检索（RAG）/ 自动摘要
-- **多 Agent** —— 层级 / 顺序(Pipeline) / 路由(Router)
+- **多 Agent** —— A2A 原生协议 · 辩论/评审/分层委托/共享记忆池 · 动态生成 · 资源隔离 · 池化
 - **Workflow** —— DAG 编排 + 可视化
 - **可观测 / 持久化** —— Hook · Tracing · Debugger · Checkpoint
 - **生产化** —— 重试 / token 预算 / 危险工具审批
@@ -30,6 +30,7 @@
 | 知识 / RAG | `rag_doc_qa.py` |
 | 编码助手（harness） | `coding_assistant.py` |
 | 多 Agent | `multi_agent.py` |
+| 多 Agent 高阶编排 | `multiagent_collaboration_demo.py` |
 | 本地 / 流式对话 | `live_ollama.py` · `chat.py` |
 
 ## 其他文档

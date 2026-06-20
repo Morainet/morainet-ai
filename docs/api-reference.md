@@ -370,7 +370,34 @@ s = scheduler_registry.create("my_scheduler", **kwargs)
 
 ## 7. Multi-Agent Orchestration
 
-### `Pipeline` — Sequential Stages
+The `morainet.multiagent` module provides a full multi-agent collaboration framework: A2A native protocol, six collaboration topologies, dynamic agent lifecycle, resource/permission isolation, and agent pooling.
+
+### 7.1 A2A Protocol — Native Agent-to-Agent Communication
+
+Point-to-point channels and many-to-many message bus — no intermediary tools needed.
+
+```python
+from morainet import A2AChannel, A2ABus, A2AMessage, AgentIdentity
+
+# Identity registration
+id_a = AgentIdentity(name="agent-a", role="researcher", namespace="team-1")
+id_b = AgentIdentity(name="agent-b", role="writer", namespace="team-1")
+
+# Point-to-point channel: handshake → query → delegate
+channel = A2AChannel(identity=id_a)
+channel.handshake(id_b)
+response = await channel.query(id_b, payload={"question": "..."})  # query→response
+result = await channel.delegate(id_b, task="Write a report")       # delegate→result
+
+# Many-to-many message bus
+bus = A2ABus()
+bus.subscribe("agent-a", topic="news")
+bus.subscribe("agent-b", topic="news")
+bus.broadcast("news", payload={"event": "breaking"})
+events = bus.poll("agent-b", topic="news")
+```
+
+### 7.2 `Pipeline` — Sequential Stages
 
 ```python
 from morainet import Pipeline, Stage
@@ -384,56 +411,101 @@ result = pipe.run("Shanghai weather")
 # result.final    -> final stage output
 ```
 
-### `Router` — Intent Routing
+### 7.3 `Router` — Intent Routing
 
 ```python
 from morainet import Router, Route
 
 router = Router(
     [
-        Route("billing", billing_agent, "Billing/payment issues"),
-        Route("tech", tech_agent, "Technical problems"),
+        Route(name="billing", agent=billing_agent, rules=["billing", "payment"]),
+        Route(name="tech", agent=tech_agent, rules=["error", "crash"]),
     ],
     selector=lambda q: "tech" if "error" in q.lower() else "billing",  # Rule-based
-    # OR provider=OpenAIProvider(...) for LLM-based routing
 )
 r = router.run("I got a 502 error")
 # r.route -> "tech", r.final -> "..."
 ```
 
-### `GroupChat` — Multi-Agent Conversation
+### 7.4 `GroupChat` — Multi-Agent Conversation
 
 ```python
 from morainet import GroupChat, GroupChatMember
 
-member1 = GroupChatMember(name="pm", agent=pm_agent, description="Product Manager")
-member2 = GroupChatMember(name="engineer", agent=dev_agent, description="Engineer")
+member1 = GroupChatMember(name="pm", agent=pm_agent)
+member2 = GroupChatMember(name="engineer", agent=dev_agent)
 
 chat = GroupChat(
     members=[member1, member2],
-    speaker_selection="round_robin",  # or "auto" (LLM-driven)
     max_rounds=10,
 )
-result = chat.run("What should we build next sprint?")
-# result.rounds -> [{"speaker": "pm", "content": "..."}, ...]
+result = await chat.arun("What should we build next sprint?")
+# result.final   -> final answer
+# result.rounds  -> [{"speaker": "pm", "round": 1, "content": "..."}, ...]
 ```
 
-### `Debate` — Structured Debate
+### 7.5 `Debate` — Structured Debate with Arbiter
 
 ```python
-from morainet import Debate
+from morainet import Debate, DebateTeam
 
+# GroupChatMember-based API
 debate = Debate(
-    debaters=[member_supporting, member_opposing],
+    debaters=[member_pro, member_con],
     judge=judge_agent,
-    rounds=3,
+    rounds=2,
 )
-result = debate.run("Remote vs. office work?")
-# result.rounds -> [{"speaker": "...", "content": "...", "round": 1}, ...]
-# result.final -> judge's verdict
+result = await debate.arun("Should we adopt microservices?")
+# result.final   -> judge's verdict
+# result.rounds  -> debate rounds with speaker/round/content
+
+# Agent-based API
+team = DebateTeam(arbiter=judge_agent, debaters=[agent_a, agent_b], rounds=2)
+result = await team.arun("Remote vs. office work?")
+# result.status -> TeamStatus.SUCCESS
+# result.final_answer -> summary verdict
 ```
 
-### `Agent.as_tool()` — Hierarchical Delegation
+### 7.6 `ReviewTeam` — Produce → Review → Revise Cycle
+
+```python
+from morainet import ReviewTeam
+
+team = ReviewTeam(
+    producer=writer_agent,
+    reviewers=[reviewer_1, reviewer_2],
+)
+result = await team.arun("Draft a project proposal")
+# result.status       -> SUCCESS / PARTIAL
+# result.contributions -> per-agent contributions
+```
+
+### 7.7 `HierarchicalTeam` — Decompose → Delegate → Aggregate
+
+```python
+from morainet import HierarchicalTeam
+
+team = HierarchicalTeam(
+    leader=orchestrator_agent,
+    specialists=[coder_agent, tester_agent],
+)
+result = await team.arun("Build a user login module")
+# Leader decomposes task, maps to specialists, aggregates results
+```
+
+### 7.8 `SharedMemoryPool` — Shared Memory for Implicit Collaboration
+
+```python
+from morainet import SharedMemoryPool
+from morainet import ShortMemory
+
+pool = SharedMemoryPool(memory=ShortMemory())
+pool.add_agent("agent-a")
+pool.add_agent("agent-b")
+# All agents share the same memory bus for implicit collaboration
+```
+
+### 7.9 `Agent.as_tool()` — Hierarchical Delegation
 
 ```python
 orchestrator = Agent(
@@ -443,6 +515,115 @@ orchestrator = Agent(
         writer.as_tool("write", "Convert facts to friendly advice"),
     ],
 )
+```
+
+### 7.10 Dynamic Agent Factory — Spawn & Destroy on Demand
+
+```python
+from morainet import AgentFactory, AgentBlueprint, AgentLifecycle
+
+factory = AgentFactory(provider)
+
+# Register blueprints (templates)
+factory.register_blueprint("coder", AgentBlueprint(
+    role="coder",
+    system_prompt="You are a senior Python engineer.",
+    sandbox_level="STANDARD",
+))
+factory.register_blueprint("reviewer", AgentBlueprint(
+    role="reviewer",
+    system_prompt="You review code for bugs and security issues.",
+    sandbox_level="STANDARD",
+))
+
+# Spawn on demand
+agent = factory.spawn("coder")
+result = await agent.arun("Write a sort function")
+
+# Lifecycle: CREATED → ACTIVE → BUSY → IDLE → TERMINATED
+lifecycle = factory.get(agent_id)
+print(lifecycle.agent_id, lifecycle.status)
+
+# Destroy when done (auto cleanup)
+factory.destroy(agent_id)
+
+# Batch operations
+agents = factory.spawn_many("coder", count=3)
+factory.destroy_all()
+```
+
+### 7.11 Agent Pool — Connection Pool for Agents
+
+```python
+from morainet import AgentPool, PoolConfig, PoolStrategy
+
+pool = AgentPool(
+    factory=factory,
+    role="coder",
+    config=PoolConfig(
+        min_size=2,
+        max_size=5,
+        idle_timeout=300.0,
+        strategy=PoolStrategy.LEAST_BUSY,  # ROUND_ROBIN | LEAST_BUSY | RANDOM
+    ),
+)
+
+await pool.start()       # Prewarm to min_size
+agent = await pool.acquire()
+result = await agent.arun("Write a function")
+await pool.release(agent_id)
+
+# Parallel execution
+results = await pool.execute_all([
+    "Task 1: ...",
+    "Task 2: ...",
+    "Task 3: ...",
+])
+
+print(pool.stats)  # {total, idle, busy, created, ...}
+```
+
+### 7.12 Agent Sandbox — Resource & Permission Isolation
+
+```python
+from morainet import AgentSandbox, ResourceQuota, PermissionProfile, MemoryNamespace
+
+sandbox = AgentSandbox(
+    quota=ResourceQuota(
+        max_tokens=10_000,
+        max_steps=20,
+        timeout_seconds=120,
+    ),
+    permission=PermissionProfile.STANDARD,  # LIMITED | STANDARD | ELEVATED | FULL
+    memory_namespace=MemoryNamespace("agent-ns-42"),
+)
+
+# LIMITED: read-only tool access, no delegation
+# STANDARD: tool calls, no spawning
+# ELEVATED: can spawn sub-agents, limited delegation
+# FULL: unrestricted
+
+# Each agent gets its own isolated memory namespace
+# Agents in different namespaces cannot read each other's memory
+```
+
+### 7.13 `TeamOrchestrator` — Unified Orchestration
+
+```python
+from morainet import TeamOrchestrator, AgentBlueprint
+
+orch = TeamOrchestrator(provider)
+orch.register_blueprint("coder", AgentBlueprint(role="coder", system_prompt="..."))
+orch.register_blueprint("tester", AgentBlueprint(role="tester", system_prompt="..."))
+
+# One-liner orchestration methods
+result = await orch.debate("Topic", debater_roles=["pro", "con"])
+result = await orch.review("Draft", producer_role="writer", reviewer_roles=["r1", "r2"])
+result = await orch.delegate("Task", specialist_roles=["coder", "tester"])
+result = await orch.pipeline("Task", stage_roles=["plan", "code", "review"])
+result = await orch.group_chat("Topic", member_roles=["pm", "dev", "qa"])
+
+# Lifecycle managed automatically: spawn → execute → cleanup
 ```
 
 ---

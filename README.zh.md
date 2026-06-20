@@ -55,7 +55,7 @@ Morainet AI 是一套 **Agent 运行时内核**：用统一的接口驱动任意
 - **可插拔推理策略** —— `ToolCallingStrategy`（默认，原生函数调用）/ `ReActStrategy`（文本式 Reason+Act），可自定义
 - **流式输出** —— `agent.astream()`，OpenAI(SSE) / Ollama(NDJSON) / Claude(SSE) / Gemini(SSE) 真流式
 - **记忆系统** —— `ShortMemory`（窗口 / token 预算）· `LongMemory`（向量检索 RAG）· `SummarizingMemory`（自动摘要压缩）
-- **多 Agent 编排** —— 层级(`as_tool`) / 顺序(`Pipeline`) / 路由(`Router`) 三种拓扑
+- **多 Agent 编排** —— A2A 原生协议（无需中转工具）· 辩论 / 评审 / 分层委托 / 共享记忆池 · 动态 Agent 生成与生命周期 · 资源与权限隔离 · Agent 池化复用
 - **Workflow 引擎** —— DAG 编排，环检测 + 拓扑分层并行执行，可导出 Mermaid / DOT
 - **Prompt 管理** —— 版本化模板、安全渲染（防注入）、可覆盖
 - **可观测性** —— Hook 事件系统 + `TraceCollector` 结构化轨迹 + `Debugger` 时间线 + OpenTelemetry 导出
@@ -85,7 +85,7 @@ flowchart TD
     Provider --> OpenAI & Claude & Gemini & Ollama & DeepSeek
 
     Tools -. as_tool .-> Sub[子 Agent]
-    Core -. Pipeline / Router .-> Sub
+    Core -. MultiAgent .-> Multi[MultiAgent<br/>A2A · 拓扑 · 工厂 · 池 · 沙箱]
 ```
 
 **一次 `agent.run()` 的流程**：准备上下文（系统提示 + 记忆注入）→ 推理策略循环（调模型 → 执行工具 → 回灌结果，直到收敛）→ 触发 Hook（追踪 / 快照）→ 持久化记忆 → 返回 `AgentResult`（含最终答案、步骤轨迹、token 用量、trace_id）。
@@ -108,7 +108,7 @@ flowchart TD
 | `persistence/` | `Checkpoint`、内存/文件/SQLite Store、`CheckpointHook` |
 | `observability/` | `Hook` / `HookManager`、`TraceCollector`、`OTelHook` |
 | `mcp/` | `MCPClient`、`stdio_session`、MCP 工具/资源/提示转换 |
-| `multiagent.py` | `Pipeline`（顺序）/ `Router`（路由）编排 |
+| `multiagent/` | A2A 协议 · 辩论/评审/分层委托/共享记忆池拓扑 · `TeamOrchestrator` · `AgentFactory` 动态生成 · `AgentPool` · `AgentSandbox` 隔离 |
 | `plugins.py` | entry points 插件注册表 |
 | `config.py` · `exceptions.py` · `tokens.py` · `debug.py` | 配置、异常体系、token 估算、Debugger |
 
@@ -184,6 +184,7 @@ python examples/quickstart.py        # 工具调用
 python examples/rag_doc_qa.py        # 知识 / RAG
 python examples/coding_assistant.py  # 编码助手（真实工具 + 验证闭环）
 python examples/multi_agent.py       # 多 Agent：层级 / 顺序 / 路由
+python examples/multiagent_collaboration_demo.py  # 进阶：A2A 协议 / 辩论 / 评审 / 委托 / 沙箱
 ```
 
 完整清单见 [`examples/README.md`](examples/README.md)。
@@ -215,9 +216,9 @@ GitHub Actions 在 Python 3.11 / 3.12 上运行上述检查。
 
 ## 路线图
 
-已发布 **v1.0**：Agent Core · 多 Provider · 流式 · 记忆(RAG/摘要) · 多 Agent · Workflow · Prompt · 可观测(Hook/Trace/Debugger/OTel) · Checkpoint(含 SQLite) · 生产化(重试/预算/审批) · Plugin · MCP。
+已发布 **v1.0**：Agent Core · 多 Provider · 流式 · 记忆(RAG/摘要) · 多 Agent（A2A · 辩论/评审/委托/池 · 沙箱）· Workflow · Prompt · 可观测(Hook/Trace/Debugger/OTel) · Checkpoint(含 SQLite) · 生产化(重试/预算/审批) · Plugin · MCP。
 
-后续方向：真实端点联调全绿 · 更多向量库后端（Qdrant/pgvector）· 上下文压缩进推理循环 · 多 Agent 进阶编排。
+后续方向：真实端点联调全绿 · 更多向量库后端（Qdrant/pgvector）· 上下文压缩进推理循环。
 
 ---
 

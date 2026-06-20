@@ -180,7 +180,120 @@ print(router.run("设备连不上网").route)   # -> tech
 
 ---
 
-## 5. 切换模型 / 推理策略
+## 5. 多智能体协作高阶编排
+
+`morainet/multiagent/` 模块提供了完整的多 Agent 协作能力：A2A 原生通信、多种拓扑、动态生命周期、资源隔离。
+
+### A2A 原生协议（无需中转工具）
+
+```python
+from morainet import A2AChannel, A2ABus, AgentIdentity
+
+# 点对点通道
+channel = A2AChannel(identity=AgentIdentity(name="agent-a", role="researcher"))
+another = AgentIdentity(name="agent-b", role="writer")
+channel.send(another, message_type="query", payload={"question": "..."})
+
+# 多对多消息总线
+bus = A2ABus()
+bus.subscribe("agent-a", topic="news")
+bus.broadcast("news", payload={"event": "..."})
+```
+
+### 辩论：多轮辩论 + Arbiter 仲裁
+
+```python
+from morainet import Debate, DebateTeam, GroupChatMember
+
+debate = Debate(
+    debaters=[
+        GroupChatMember(name="pro", agent=agent_pro),
+        GroupChatMember(name="con", agent=agent_con),
+    ],
+    judge=judge_agent,
+    rounds=2,
+)
+result = await debate.arun("Should we adopt microservices?")
+print(result.final)   # judge's verdict
+```
+
+### 评审：产出 → 审查 → 修改循环
+
+```python
+from morainet import ReviewTeam
+
+review = ReviewTeam(producer=writer, reviewers=[r1, r2])
+result = await review.arun("Draft a project proposal")
+```
+
+### 分层委托：主 Agent 分解 → 委托专家 → 汇总
+
+```python
+from morainet import HierarchicalTeam
+
+team = HierarchicalTeam(leader=orchestrator, specialists=[coder, reviewer])
+result = await team.arun("Build a user login module")
+```
+
+### 共享记忆池
+
+```python
+from morainet import SharedMemoryPool
+
+pool = SharedMemoryPool(memory=ShortMemory())
+pool.add_agent("agent-a")
+pool.add_agent("agent-b")
+# 所有 Agent 共享同一记忆总线
+```
+
+### 动态 Agent 生成与池化
+
+```python
+from morainet import AgentFactory, AgentBlueprint, AgentPool, PoolConfig
+
+factory = AgentFactory(provider)
+factory.register_blueprint("coder", AgentBlueprint(role="coder", system_prompt="..."))
+
+# 按需生成
+agent = factory.spawn("coder")
+result = await agent.arun("Write a sort function")
+factory.destroy(agent_id)
+
+# 池化复用
+pool = AgentPool(factory, "coder", PoolConfig(min_size=2, max_size=5))
+await pool.start()
+a = await pool.acquire()
+await pool.release(agent_id)
+```
+
+### 资源 & 权限隔离
+
+```python
+from morainet import AgentSandbox, ResourceQuota, PermissionProfile, MemoryNamespace
+
+sandbox = AgentSandbox(
+    quota=ResourceQuota(max_tokens=10000, max_steps=20, timeout_seconds=120),
+    permission=PermissionProfile.STANDARD,
+    memory_namespace=MemoryNamespace("agent-x"),
+)
+```
+
+### 统一编排器
+
+```python
+from morainet import TeamOrchestrator
+
+orch = TeamOrchestrator(provider)
+# 一键执行辩论 / 评审 / 委托 / 流水线 / 群聊
+result = await orch.debate("Topic", debater_roles=["pro", "con"])
+result = await orch.review("Draft", producer_role="writer", reviewer_roles=["r1"])
+result = await orch.delegate("Task", specialist_roles=["coder", "tester"])
+result = await orch.group_chat("Topic", member_roles=["pm", "dev", "qa"])
+```
+
+---
+
+## 6. 切换模型 / 推理策略
 
 ```python
 from morainet import Agent, ReActStrategy
@@ -194,7 +307,7 @@ Agent(provider=..., strategy=ReActStrategy())            # 模型不支持原生
 
 ---
 
-## 6. 调试与持久化
+## 7. 调试与持久化
 
 ### 看运行时间线
 
@@ -224,7 +337,7 @@ agent.resume(cp)
 
 ---
 
-## 7. 走向生产
+## 8. 走向生产
 
 ```python
 from morainet import Agent
@@ -243,7 +356,7 @@ agent = Agent(
 
 ---
 
-## 8. Workflow（流程已知时）
+## 9. Workflow（流程已知时）
 
 当步骤固定、不需要模型自主决策，用 DAG 更可控：
 

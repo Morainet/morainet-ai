@@ -55,7 +55,7 @@ Compared to peers: it does **not** compete with model products like ChatGPT/Clau
 - **Pluggable Reasoning Strategy** — `ToolCallingStrategy` (default, native function calling) / `ReActStrategy` (text-based Reason+Act), fully customizable
 - **Streaming Output** — `agent.astream()`, true streaming for OpenAI (SSE) / Ollama (NDJSON) / Claude (SSE) / Gemini (SSE)
 - **Memory System** — `ShortMemory` (window / token budget) · `LongMemory` (vector-retrieval RAG) · `SummarizingMemory` (auto-summarization compression)
-- **Multi-Agent Orchestration** — Three topologies: hierarchical (`as_tool`) / sequential (`Pipeline`) / routing (`Router`)
+- **Multi-Agent Orchestration** — A2A native protocol (no intermediary tools) · debate / review / hierarchical delegation / shared memory pool · dynamic agent spawn & lifecycle · resource & permission isolation · agent pooling
 - **Workflow Engine** — DAG orchestration, cycle detection + topological level parallel execution, exportable as Mermaid / DOT
 - **Prompt Management** — Versioned templates, safe rendering (injection-proof), overridable
 - **Observability** — Hook event system + `TraceCollector` structured traces + `Debugger` timeline + OpenTelemetry export
@@ -85,7 +85,7 @@ flowchart TD
     Provider --> OpenAI & Claude & Gemini & Ollama & DeepSeek
 
     Tools -. as_tool .-> Sub[Sub Agent]
-    Core -. Pipeline / Router .-> Sub
+    Core -. MultiAgent .-> Multi[MultiAgent<br/>A2A · Topologies · Factory · Pool · Sandbox]
 ```
 
 **An `agent.run()` flow**: Prepare context (system prompt + memory injection) → Reasoning strategy loop (call model → execute tools → feed back results, until convergence) → Trigger hooks (tracing / snapshot) → Persist memory → Return `AgentResult` (containing final answer, step trace, token usage, trace_id).
@@ -108,7 +108,7 @@ flowchart TD
 | `persistence/` | `Checkpoint`, in-memory/file/SQLite Store, `CheckpointHook` |
 | `observability/` | `Hook` / `HookManager`, `TraceCollector`, `OTelHook` |
 | `mcp/` | `MCPClient`, `stdio_session`, MCP tool/resource/prompt conversion |
-| `multiagent.py` | `Pipeline` (sequential) / `Router` (routing) orchestration |
+| `multiagent/` | A2A protocol · debate/review/hierarchical/shared-memory topologies · `TeamOrchestrator` · `AgentFactory` dynamic spawn · `AgentPool` · `AgentSandbox` isolation |
 | `plugins.py` | entry points plugin registry |
 | `config.py` · `exceptions.py` · `tokens.py` · `debug.py` | Configuration, exception hierarchy, token estimation, Debugger |
 
@@ -184,6 +184,7 @@ python examples/quickstart.py        # Tool calling
 python examples/rag_doc_qa.py        # Knowledge / RAG
 python examples/coding_assistant.py  # Coding assistant (real tools + validation loop)
 python examples/multi_agent.py       # Multi-agent: hierarchical / sequential / routing
+python examples/multiagent_collaboration_demo.py  # Advanced: A2A protocol / debate / review / delegation / sandbox
 ```
 
 Full listing in [`examples/README.md`](examples/README.md).
@@ -215,9 +216,9 @@ GitHub Actions runs the above checks on Python 3.11 / 3.12.
 
 ## Roadmap
 
-**v1.0** released: Agent Core · Multi-Provider · Streaming · Memory (RAG/summarization) · Multi-Agent · Workflow · Prompt · Observability (Hook/Trace/Debugger/OTel) · Checkpoint (incl. SQLite) · Production hardening (retry/budget/approval) · Plugin · MCP.
+**v1.0** released: Agent Core · Multi-Provider · Streaming · Memory (RAG/summarization) · Multi-Agent (A2A · debate/review/delegation/pool · sandbox) · Workflow · Prompt · Observability (Hook/Trace/Debugger/OTel) · Checkpoint (incl. SQLite) · Production hardening (retry/budget/approval) · Plugin · MCP.
 
-Upcoming: all live endpoint tests passing · more vector store backends (Qdrant/pgvector) · context compression in reasoning loop · advanced multi-agent orchestration.
+Upcoming: all live endpoint tests passing · more vector store backends (Qdrant/pgvector) · context compression in reasoning loop.
 
 ---
 

@@ -37,7 +37,7 @@
 | Prompt | `PromptTemplate` / `PromptRegistry` / 内置模板 | ✅ |
 | 可观测 | `Hook` / `HookManager` / `TraceCollector` / `Debugger` | ✅ |
 | 持久化 | `Checkpoint` / `InMemory`·`File`·`SQLite` Store / `CheckpointHook` / `resume` | ✅ |
-| 多 Agent | `Agent.as_tool()`（层级）/ `Pipeline`（顺序）/ `Router`（路由） | ✅ |
+| 多 Agent | A2A 协议 · 辩论/评审/分层委托/共享记忆池 · `TeamOrchestrator` · `AgentFactory` 动态生成 · `AgentPool` · `AgentSandbox` 隔离 | ✅ |
 | 生产化 | `RetryPolicy` / `token_budget` / `max_consecutive_errors` / 危险工具审批 | ✅ |
 | 扩展 | `PluginRegistry` / MCP（工具 + 资源 + 提示，`MCPClient` + `stdio_session`） | ✅ |
 | OTel | `OTelHook`（可选 `[otel]`） | ✅ |
@@ -157,7 +157,7 @@ MorainetError
 - `CONTRIBUTING.md`
 
 **C 组 · 能力深化**
-- 多 Agent：`agent.as_tool()`（orchestrator / 子 agent 协作）
+- 多 Agent：A2A 原生协议 + 辩论/评审/分层委托/共享记忆池 + 动态 Agent 生成与生命周期 + 资源/权限隔离 + Agent 池化复用
 - 真实 embedding：`OllamaEmbedder` / `OpenAIEmbedder`（Ollama 已本机验证语义检索）
 - 上下文压缩：`SummarizingMemory`（启用一直空置的 `summarizer` 模板）
 
@@ -176,7 +176,7 @@ MorainetError
 
 ### 5.2 能力深化（抬高天花板）
 - **上下文压缩进推理循环**：当前 `SummarizingMemory` 仅在 Memory 层；可在长对话中自动触发，并接 `ContextLengthError` 兜底。
-- **多 Agent 进阶**：已有层级(`as_tool`)/顺序(`Pipeline`)/路由(`Router`)；可再加 GroupChat（manager 选发言者）、子 agent 并行、共享记忆。
+- **多 Agent 进阶**：已有完整 `multiagent/` 模块——A2A 协议（`A2AChannel`/`A2ABus`）· 辩论(`Debate`/`DebateTeam`)· 评审(`ReviewTeam`)· 分层委托(`HierarchicalTeam`)· 共享记忆池(`SharedMemoryPool`)· 动态生成(`AgentFactory`/`AgentPool`)· 沙箱隔离(`AgentSandbox`)· 统一编排器(`TeamOrchestrator`)。
 - **真实 embedding 缓存**：embedding 结果缓存，减少重复请求。
 - **流式工具调用**：增量解析 `tool_calls`；补 Claude / Gemini 的 SSE 流式。
 
