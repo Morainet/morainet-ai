@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="MORAINET_", env_file=".env", extra="ignore")
 
+    # -- international providers ------------------------------------------
     openai_api_key: str | None = None
     openai_base_url: str = "https://api.openai.com/v1"
 
@@ -22,6 +23,31 @@ class Settings(BaseSettings):
 
     ollama_base_url: str = "http://localhost:11434"
 
+    # -- Chinese LLM providers --------------------------------------------
+    qwen_api_key: str | None = None
+    qwen_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+    wenxin_api_key: str | None = None
+    wenxin_secret_key: str | None = None
+    wenxin_base_url: str = "https://qianfan.baidubce.com/v2"
+
+    zhipu_api_key: str | None = None
+    zhipu_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
+
+    moonshot_api_key: str | None = None
+    moonshot_base_url: str = "https://api.moonshot.cn/v1"
+
+    minimax_api_key: str | None = None
+    minimax_base_url: str = "https://api.minimax.chat/v1"
+
+    siliconflow_api_key: str | None = None
+    siliconflow_base_url: str = "https://api.siliconflow.cn/v1"
+
+    # -- routing ----------------------------------------------------------
+    router_default_tier: str = "small"
+    router_fallback_enabled: bool = True
+
+    # -- general ----------------------------------------------------------
     default_model: str = "gpt-4o"
     max_steps: int = 10
     request_timeout: float = 60.0
