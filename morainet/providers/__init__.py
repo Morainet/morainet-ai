@@ -1,6 +1,13 @@
 from morainet.providers.base import Provider
 from morainet.providers.claude import ClaudeProvider
 from morainet.providers.deepseek import DeepSeekProvider
+from morainet.providers.error_classifier import (
+    CategorizedRetryPolicy,
+    CategorizedRetryingProvider,
+    CategoryStrategy,
+    ErrorCategory,
+    classify_error,
+)
 from morainet.providers.gemini import GeminiProvider
 from morainet.providers.minimax import MiniMaxProvider
 from morainet.providers.mock import MockProvider
@@ -53,4 +60,10 @@ __all__ = [
     "multi_model_query",
     "RetryingProvider",
     "RetryPolicy",
+    # Error classification retry
+    "ErrorCategory",
+    "CategoryStrategy",
+    "CategorizedRetryPolicy",
+    "CategorizedRetryingProvider",
+    "classify_error",
 ]

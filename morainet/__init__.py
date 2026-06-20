@@ -2,6 +2,15 @@
 
 from morainet.core import Agent, AgentResult, Message, Usage
 from morainet.debug import Debugger
+from morainet.engineering import (
+    BillingStats,
+    BillingTracker,
+    CircuitBreaker,
+    CircuitState,
+    ConcurrencyLimiter,
+    SlidingWindowRateLimiter,
+    TokenBucketRateLimiter,
+)
 from morainet.memory import (
     ChromaStore,
     CompositeMemory,
@@ -37,13 +46,19 @@ from morainet.persistence import (
     Checkpoint,
     FileCheckpointStore,
     InMemoryCheckpointStore,
+    PostgresCheckpointStore,
+    RedisCheckpointStore,
     SQLiteCheckpointStore,
 )
 from morainet.plugins import PluginRegistry, plugins
 from morainet.prompts import PromptTemplate
 from morainet.providers import (
+    CategorizedRetryPolicy,
+    CategorizedRetryingProvider,
+    CategoryStrategy,
     ClaudeProvider,
     DeepSeekProvider,
+    ErrorCategory,
     GeminiProvider,
     MiniMaxProvider,
     MockProvider,
@@ -62,6 +77,7 @@ from morainet.providers import (
     SiliconFlowProvider,
     WenxinProvider,
     ZhipuProvider,
+    classify_error,
     estimate_complexity,
     multi_model_query,
     multi_ollama_query,
@@ -75,7 +91,25 @@ from morainet.reasoning import (
     ToolCache,
     ToolCallingStrategy,
 )
-from morainet.tools import Tool, tool
+from morainet.tools import (
+    ApprovalFlow,
+    ApprovalRequest,
+    ApprovalResponse,
+    AuditEntry,
+    AuditLogger,
+    AuditStore,
+    CallbackApprover,
+    FileAuditStore,
+    InMemoryApprovalStore,
+    InMemoryAuditStore,
+    InteractiveApprover,
+    PermissionEnforcer,
+    PermissionRegistry,
+    SQLiteAuditStore,
+    Tool,
+    ToolPermissionError,
+    tool,
+)
 from morainet.workflow import Workflow
 
 __version__ = "1.0.0"
@@ -106,6 +140,17 @@ __all__ = [
     "LLMReranker",
     "RAGPipeline",
     "KnowledgeBase",
+    # Engineering — rate limiting
+    "TokenBucketRateLimiter",
+    "SlidingWindowRateLimiter",
+    # Engineering — concurrency
+    "ConcurrencyLimiter",
+    # Engineering — billing
+    "BillingTracker",
+    "BillingStats",
+    # Engineering — circuit breaker
+    "CircuitBreaker",
+    "CircuitState",
     # Providers
     "Provider",
     "OpenAIProvider",
@@ -127,6 +172,12 @@ __all__ = [
     "ModelRouter",
     "estimate_complexity",
     "multi_model_query",
+    # Error classification retry
+    "ErrorCategory",
+    "CategoryStrategy",
+    "CategorizedRetryPolicy",
+    "CategorizedRetryingProvider",
+    "classify_error",
     # Existing
     "MockProvider",
     "Workflow",
@@ -138,15 +189,39 @@ __all__ = [
     "PlanSolveReflectStrategy",
     "ContextCompressor",
     "ToolCache",
+    # Hooks & observability
     "Hook",
     "TraceCollector",
     "Debugger",
+    # Persistence
     "Checkpoint",
     "InMemoryCheckpointStore",
     "FileCheckpointStore",
     "SQLiteCheckpointStore",
+    "RedisCheckpointStore",
+    "PostgresCheckpointStore",
+    # Retry
     "RetryingProvider",
     "RetryPolicy",
+    # Tool security
+    "PermissionRegistry",
+    "PermissionEnforcer",
+    "ToolPermissionError",
+    # Tool approval
+    "ApprovalFlow",
+    "ApprovalRequest",
+    "ApprovalResponse",
+    "InteractiveApprover",
+    "CallbackApprover",
+    "InMemoryApprovalStore",
+    # Audit logging
+    "AuditEntry",
+    "AuditLogger",
+    "AuditStore",
+    "InMemoryAuditStore",
+    "FileAuditStore",
+    "SQLiteAuditStore",
+    # Other
     "MCPClient",
     "PluginRegistry",
     "plugins",

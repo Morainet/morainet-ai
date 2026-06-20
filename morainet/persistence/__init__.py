@@ -6,6 +6,8 @@ from morainet.persistence.checkpoint import (
     InMemoryCheckpointStore,
     SQLiteCheckpointStore,
 )
+from morainet.persistence.postgres_checkpoint import PostgresCheckpointStore
+from morainet.persistence.redis_checkpoint import RedisCheckpointStore
 
 __all__ = [
     "Checkpoint",
@@ -13,5 +15,7 @@ __all__ = [
     "InMemoryCheckpointStore",
     "FileCheckpointStore",
     "SQLiteCheckpointStore",
+    "RedisCheckpointStore",
+    "PostgresCheckpointStore",
     "CheckpointHook",
 ]

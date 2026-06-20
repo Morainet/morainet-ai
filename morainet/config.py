@@ -76,5 +76,41 @@ class Settings(BaseSettings):
     tool_cache_path: str = ""               # disk path for cache persistence
     max_reflect_rounds: int = 3             # Plan-Solve-Reflect max replan cycles
 
+    # -- engineering / production -----------------------------------------
+    # Rate limiting
+    rate_limit_tokens_per_sec: float = 10.0    # token bucket refill rate
+    rate_limit_burst: int = 20                 # max burst capacity
+    rate_limit_window_max: int = 100           # sliding window max requests
+    rate_limit_window_seconds: float = 60.0    # sliding window duration
+
+    # Concurrency
+    max_concurrent_llm_calls: int = 10         # global async semaphore for LLM calls
+    max_concurrent_tool_calls: int = 20        # global async semaphore for tool executions
+
+    # Circuit breaker
+    circuit_breaker_failures: int = 5          # consecutive failures to OPEN
+    circuit_breaker_cooldown: float = 30.0     # seconds in OPEN before HALF_OPEN
+    circuit_breaker_half_open_max: int = 1     # max trial calls in HALF_OPEN
+
+    # Billing
+    billing_budget_usd: float = 0.0            # 0 = no budget; >0 = enforce cost cap
+
+    # Persistence
+    checkpoint_redis_url: str = ""             # e.g. redis://localhost:6379/0
+    checkpoint_redis_ttl: int = 0              # seconds, 0 = no expiry
+    checkpoint_postgres_dsn: str = ""          # e.g. postgresql://user:pass@localhost/morainet
+
+    # Audit
+    audit_log_path: str = ""                   # file path for FileAuditStore
+    audit_db_path: str = "morainet_audit.db"   # SQLite path for SQLiteAuditStore
+
+    # Error classification retry
+    retry_network_max: int = 3                 # max retries for network errors
+    retry_network_base_delay: float = 0.5
+    retry_rate_limit_max: int = 5              # max retries for rate limit errors
+    retry_rate_limit_base_delay: float = 1.0
+    retry_server_max: int = 3                  # max retries for server errors
+    retry_server_base_delay: float = 2.0
+
 
 settings = Settings()

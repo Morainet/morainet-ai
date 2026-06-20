@@ -30,12 +30,20 @@ class ProviderTimeoutError(ProviderError):
     """Provider request timed out (retryable)."""
 
 
+class NetworkError(ProviderError):
+    """Network-level failure (connection refused, DNS, etc.) — retryable."""
+
+
 class AuthError(ProviderError):
     """Authentication / authorization failure (not retryable)."""
 
 
 class ContextLengthError(ProviderError):
     """Request exceeded the model context window."""
+
+
+class CircuitBreakerOpenError(ProviderError):
+    """Circuit breaker is OPEN — call rejected to prevent cascading failure."""
 
 
 # --- Tool errors -----------------------------------------------------------
