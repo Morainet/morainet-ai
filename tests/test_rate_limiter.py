@@ -98,7 +98,7 @@ async def test_token_bucket_consume_refills_over_time(monkeypatch):
 
 
 async def test_token_bucket_acquire_blocks_then_gets_token(monkeypatch):
-    tb = TokenBucketRateLimiter(rate=100, burst=0)
+    tb = TokenBucketRateLimiter(rate=100, burst=1)
     tb._tokens = 0.0
 
     # _refill needs to add at least 1 token; advance by 0.02s → 2 tokens
@@ -164,7 +164,8 @@ async def test_sliding_window_prune_old_entries(monkeypatch):
     await sw.acquire()
 
     # Advance time beyond window
-    monkeypatch.setattr(time, "monotonic", lambda: time.monotonic() + 2.0)
+    _orig_monotonic = time.monotonic
+    monkeypatch.setattr(time, "monotonic", lambda: _orig_monotonic() + 2.0)
     await sw.acquire()
     # Old entries should be pruned
     assert sw.current_count <= 1

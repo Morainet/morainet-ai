@@ -37,7 +37,7 @@ async def test_mcp_tool_to_tool_simple():
     assert t.schema["name"] == "test_tool"
     assert t.schema["description"] == "A test tool"
 
-    result = await t.invoke(arg1="hello", arg2=42)
+    result = await t.invoke({"arg1": "hello", "arg2": 42})
     assert "test_tool" in result
     assert "hello" in result
     assert "42" in result
@@ -54,7 +54,7 @@ async def test_mcp_tool_to_tool_minimal():
 
     t = mcp_tool_to_tool(descriptor, caller)
     assert t.schema["name"] == "minimal"
-    assert t.schema["description"] == ""  # no description provided
+    assert t.schema["description"] == "minimal"  # falls back to name when no description
 
 
 async def test_mcp_tool_to_tool_no_input_schema():
@@ -259,8 +259,9 @@ def test_mcp_cache_persist_and_load():
         assert cache2._prompts_cache["default"][1] == [{"name": "test_prompt"}]
 
 
-def test_mcp_cache_load_missing_file():
-    cache = MCPResourceCache(persist_path="/nonexistent/path/xyz")
+def test_mcp_cache_load_missing_file(tmp_path):
+    missing = str(tmp_path / "nonexistent_subdir")
+    cache = MCPResourceCache(persist_path=missing)
     assert cache.stats()["prompts"] == 0
 
 

@@ -192,14 +192,14 @@ async def test_build_fact_index_empty():
 
 async def test_build_fact_index_with_provider():
     provider = MockProvider(handler=lambda m, t: ChatResponse(
-        message=Message.assistant(content="- fact one\n- fact two\n  \n- fact three\n-short")
+        message=Message.assistant(content="- fact one\n- fact two\n  \n- fact three\n-ab")
     ))
     cc = ContextCompressor(provider=provider)
     result = await cc.build_fact_index([Message.user("important info"), Message.assistant(content="response")])
     assert "fact one" in result
     assert "fact two" in result
     assert "fact three" in result
-    assert "short" not in result  # too short (<=3 chars stripped)
+    assert "ab" not in result  # too short (<=3 chars stripped)
 
 
 # ---------------------------------------------------------------------------

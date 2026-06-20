@@ -371,7 +371,7 @@ class PlanSolveReflectStrategy(ReasoningStrategy):
         except Exception:
             verdict = {}
 
-        if not isinstance(verdict, dict):
+        if not isinstance(verdict, dict) or not verdict:
             verdict = {"verdict": "continue" if pending else "done"}
 
         logger.debug(
