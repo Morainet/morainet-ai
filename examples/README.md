@@ -61,5 +61,37 @@ MORAINET_OLLAMA_MODEL=qwen2.5:3b python examples/coding_assistant.py
 | 分布式工作流 | `distributed_workflow.py` | Task Queue (Redis/RabbitMQ) + DistributedParallelScheduler + TaskEnvelope 序列化 + 进度追踪 |
 | 分布式集群 | `distributed_cluster.py` | ConsistentHashRing 会话分片 + LoadBalancer + HybridRouter 边缘/云端路由 + DistributedRunTrace + 分布式断点恢复 |
 
+## 可视化配套工具
+
+| 场景 | 示例 | 涉及能力 |
+| --- | --- | --- |
+| Debug Web 面板 | `debug_panel_demo.py` | PanelHook 事件流 + 实时 Web 面板 + Token 消耗图表 + 工具调用时间线 + 记忆检索日志 |
+| Mermaid 工作流导出 | `debug_panel_demo.py` | 交互式 HTML 图表 + Mermaid/SVG/PNG 导出 + 执行状态着色 + 暗色模式切换 |
+| CLI 命令行工具 | `debug_panel_demo.py` | 批量执行 Agent + trace 导出/合并 + memory 清理 + tool Schema 调试 + workflow viz |
+
+### 启动 Debug Web 面板
+
+```bash
+# 终端 1：启动面板
+python -m morainet.debug_panel.server --port 8080
+
+# 终端 2：运行带 PanelHook 的 Agent（事件自动推送到面板）
+python examples/debug_panel_demo.py
+# 浏览器访问 http://127.0.0.1:8080
+```
+
+### CLI 快速参考
+
+```bash
+python -m morainet.cli run "What is AI?"                          # 执行单次查询
+python -m morainet.cli batch queries.txt -o results.json           # 批量执行
+python -m morainet.cli trace export ./traces/                      # 导出 trace
+python -m morainet.cli trace merge t1.json t2.json                 # 合并多节点 trace
+python -m morainet.cli trace inspect trace.json                    # 查看 trace 详情
+python -m morainet.cli memory clean                                # 清理记忆
+python -m morainet.cli tool schema -m my_tools.py                  # 调试工具 Schema
+python -m morainet.cli workflow viz -m my_wf.py -o output.html     # 可视化工作流
+```
+
 > macOS + Homebrew Python：命令行需 `export DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib`
 > （编辑器 F5 已在 `.vscode` 配好）。

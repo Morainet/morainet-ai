@@ -1,0 +1,49 @@
+{
+  "root_trace_id": "150874296ab24b3190eb25b1ae9bb554",
+  "query": "What is Python?",
+  "node_traces": {
+    "node-1": {
+      "trace_id": "9349d4f465fb4359a32d61b11e9d88fc",
+      "query": "What is Python?",
+      "spans": [
+        {
+          "kind": "llm",
+          "name": "mock",
+          "detail": "stop",
+          "tokens": 2,
+          "elapsed_ms": 0.029400001949397847,
+          "node_id": "node-1",
+          "parent_span_id": ""
+        }
+      ],
+      "total_tokens": 2,
+      "total_ms": 0.09710000085760839,
+      "final_answer": "[mock] What is Python?",
+      "node_id": "node-1",
+      "workflow_id": ""
+    },
+    "node-2": {
+      "trace_id": "29dd0594d40f4cda9607348711502b07",
+      "query": "What is JavaScript?",
+      "spans": [
+        {
+          "kind": "llm",
+          "name": "mock",
+          "detail": "stop",
+          "tokens": 2,
+          "elapsed_ms": 0.026600002456689253,
+          "node_id": "node-2",
+          "parent_span_id": ""
+        }
+      ],
+      "total_tokens": 2,
+      "total_ms": 0.09270000009564683,
+      "final_answer": "[mock] What is JavaScript?",
+      "node_id": "node-2",
+      "workflow_id": ""
+    }
+  },
+  "total_tokens": 4,
+  "total_ms": 0.18980000095325522,
+  "final_answer": "[mock] What is Python?"
+}

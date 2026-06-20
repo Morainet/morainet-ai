@@ -49,6 +49,10 @@ dev = [
     "mypy>=1.10",
 ]
 
+[project.scripts]
+morainet = "morainet.cli.main:main"
+morainet-debug = "morainet.debug_panel.server:main"
+
 [project.urls]
 Homepage = "https://github.com/MorainetAI/morainet-ai"
 

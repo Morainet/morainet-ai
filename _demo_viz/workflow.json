@@ -1,0 +1,106 @@
+{
+  "node_count": 7,
+  "edge_count": 7,
+  "levels": [
+    [
+      "fetch_data"
+    ],
+    [
+      "parse_html"
+    ],
+    [
+      "extract_text"
+    ],
+    [
+      "classify",
+      "summarize"
+    ],
+    [
+      "translate"
+    ],
+    [
+      "save_to_db"
+    ]
+  ],
+  "level_count": 6,
+  "nodes": {
+    "fetch_data": {
+      "name": "fetch_data",
+      "deps": [],
+      "level": 0
+    },
+    "parse_html": {
+      "name": "parse_html",
+      "deps": [
+        "fetch_data"
+      ],
+      "level": 1
+    },
+    "extract_text": {
+      "name": "extract_text",
+      "deps": [
+        "parse_html"
+      ],
+      "level": 2
+    },
+    "classify": {
+      "name": "classify",
+      "deps": [
+        "extract_text"
+      ],
+      "level": 3
+    },
+    "summarize": {
+      "name": "summarize",
+      "deps": [
+        "extract_text"
+      ],
+      "level": 3
+    },
+    "translate": {
+      "name": "translate",
+      "deps": [
+        "summarize"
+      ],
+      "level": 4
+    },
+    "save_to_db": {
+      "name": "save_to_db",
+      "deps": [
+        "translate",
+        "classify"
+      ],
+      "level": 5
+    }
+  },
+  "edges": [
+    {
+      "from": "fetch_data",
+      "to": "parse_html"
+    },
+    {
+      "from": "parse_html",
+      "to": "extract_text"
+    },
+    {
+      "from": "extract_text",
+      "to": "classify"
+    },
+    {
+      "from": "extract_text",
+      "to": "summarize"
+    },
+    {
+      "from": "summarize",
+      "to": "translate"
+    },
+    {
+      "from": "classify",
+      "to": "save_to_db"
+    },
+    {
+      "from": "translate",
+      "to": "save_to_db"
+    }
+  ]
+}

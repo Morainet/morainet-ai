@@ -1,7 +1,14 @@
 """Morainet AI — a lightweight, extensible AI Agent Runtime Framework."""
 
+from morainet.cli.main import main as cli_main
 from morainet.core import Agent, AgentResult, Content, Message, Usage
 from morainet.debug import Debugger
+from morainet.debug_panel import PanelHook, PanelStore, get_panel_store
+from morainet.debug_panel.mermaid_export import (
+    export_mermaid_html,
+    export_mermaid_png,
+    export_mermaid_svg,
+)
 from morainet.engineering import (
     BillingStats,
     BillingTracker,
@@ -421,5 +428,15 @@ __all__ = [
     "ClusterCheckpointStore",
     "HeartbeatCheckpointStore",
     "DistributeCheckpointHook",
+    # Debug panel
+    "PanelStore",
+    "PanelHook",
+    "get_panel_store",
+    # Debug panel — mermaid export
+    "export_mermaid_html",
+    "export_mermaid_png",
+    "export_mermaid_svg",
+    # CLI
+    "cli_main",
     "__version__",
 ]
