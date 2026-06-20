@@ -57,6 +57,40 @@ BUILTIN_TEMPLATES: dict[str, PromptTemplate] = {
         name="summarizer",
         template="Summarize the following conversation concisely:\n{history}",
     ),
+    "episode_compressor": PromptTemplate(
+        name="episode_compressor",
+        template=(
+            "你是一个记忆压缩助手。将以下对话压缩成一段简洁的摘要，"
+            "保留关键决策、用户偏好、重要事实和未完成的任务。\n\n"
+            "{prior}\n\n需要压缩的新对话：\n{history}\n\n摘要："
+        ),
+    ),
+    "fact_extractor": PromptTemplate(
+        name="fact_extractor",
+        template=(
+            "从以下对话摘要中提取关键事实和决策。每条事实用一行表示，格式：\n"
+            "  topic: value\n\n"
+            "只提取客观事实、用户信息和重要决定。忽略闲聊和过渡性内容。\n\n"
+            "对话摘要：\n{history}\n\n提取的事实："
+        ),
+    ),
+    "preference_detector": PromptTemplate(
+        name="preference_detector",
+        template=(
+            "从以下对话中检测用户偏好。对每个偏好，输出一行：\n"
+            "  CATEGORY | key: value\n\n"
+            "CATEGORY 可以是: style(回答风格), domain(专业领域), "
+            "language(语言), format(格式), identity(身份), other\n\n"
+            "对话：\n{history}\n\n检测到的偏好："
+        ),
+    ),
+    "conflict_resolver": PromptTemplate(
+        name="conflict_resolver",
+        template=(
+            "以下知识库中存在矛盾的事实。对于每组矛盾，判断哪个事实更可信，并说明理由。\n\n"
+            "矛盾事实：\n{conflicts}\n\n裁决（每行一个裁决）："
+        ),
+    ),
     "context_compressor": PromptTemplate(
         name="context_compressor",
         template=(
