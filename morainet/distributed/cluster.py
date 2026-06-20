@@ -472,7 +472,7 @@ class AgentCluster:
     async def _get_client(self) -> Any:
         if self._client is None:
             try:
-                import redis.asyncio as aioredis  # type: ignore[import-untyped]
+                import redis.asyncio as aioredis
             except ImportError:
                 raise ImportError("redis package required. pip install morainet-ai[redis]") from None
             self._client = aioredis.from_url(self._redis_url, decode_responses=True)

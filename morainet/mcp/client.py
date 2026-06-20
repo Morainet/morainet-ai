@@ -36,11 +36,11 @@ class MCPClient:
 
     async def list_resources(self) -> list[dict[str, Any]]:
         fn = getattr(self.session, "list_resources", None)
-        return await fn() if fn else []  # type: ignore[no-any-return]
+        return await fn() if fn else []
 
     async def read_resource(self, uri: str) -> str:
         fn = getattr(self.session, "read_resource", None)
-        return await fn(uri) if fn else ""  # type: ignore[no-any-return]
+        return await fn(uri) if fn else ""
 
     async def resource_messages(self) -> list[Message]:
         """Read all resources as system messages, ready to inject as context."""
@@ -56,11 +56,11 @@ class MCPClient:
 
     async def list_prompts(self) -> list[dict[str, Any]]:
         fn = getattr(self.session, "list_prompts", None)
-        return await fn() if fn else []  # type: ignore[no-any-return]
+        return await fn() if fn else []
 
     async def get_prompt(self, name: str, arguments: dict[str, Any] | None = None) -> str:
         fn = getattr(self.session, "get_prompt", None)
-        return await fn(name, arguments or {}) if fn else ""  # type: ignore[no-any-return]
+        return await fn(name, arguments or {}) if fn else ""
 
 
 class _SDKSession:

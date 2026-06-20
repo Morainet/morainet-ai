@@ -17,7 +17,7 @@ class ToolRegistry:
     def register(self, t: Tool | Callable[..., Any]) -> Tool:
         wrapped = t if isinstance(t, Tool) else _tool(t)
         self._tools[wrapped.name] = wrapped
-        return wrapped  # type: ignore[no-any-return]
+        return wrapped
 
     def get(self, name: str) -> Tool:
         try:

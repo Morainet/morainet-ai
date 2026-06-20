@@ -148,7 +148,7 @@ class RedisBackend(TaskBackend):
     def client(self) -> Any:
         if self._client is None:
             try:
-                import redis.asyncio as aioredis  # type: ignore[import-untyped]
+                import redis.asyncio as aioredis
             except ImportError:
                 raise ImportError(
                     "redis package required. Install: pip install morainet-ai[redis]"

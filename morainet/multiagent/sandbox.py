@@ -259,5 +259,5 @@ class AgentSandbox:
         return cls(
             agent_id=agent_id,
             quota=ResourceQuota.unlimited() if level.upper() == "FULL" else ResourceQuota.tight(),
-            profile=factory(agent_id),  # type: ignore[operator]
+            profile=factory(agent_id),
         )
