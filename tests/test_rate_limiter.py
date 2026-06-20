@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import time
 
-import pytest
 
 from morainet.engineering.rate_limiter import (
     RateLimitConfig,

@@ -194,7 +194,7 @@ def test_schema_skip_var_keyword():
 
 def test_schema_get_type_hints_fallback():
     @tool
-    def f(x: "UndefinedClassXYZ") -> str:
+    def f(x: "UndefinedClassXYZ") -> str:  # noqa: F821
         """Bad annotation."""
         return "ok"
     # get_type_hints fails → falls back to raw annotation string → defaults to "string"

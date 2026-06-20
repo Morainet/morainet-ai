@@ -5,7 +5,6 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from morainet.core.models import Message, Step, Usage
 from morainet.persistence.checkpoint import (
@@ -222,7 +221,7 @@ async def test_checkpoint_hook_on_llm_end():
 
 async def test_checkpoint_hook_on_tool_end():
     from morainet.core.context import Context
-    from morainet.core.models import Step, StepStatus, ToolCall
+    from morainet.core.models import StepStatus
 
     store = InMemoryCheckpointStore()
     hook = CheckpointHook(store=store)
@@ -243,7 +242,7 @@ async def test_checkpoint_hook_on_tool_end():
 
 async def test_checkpoint_hook_on_run_end():
     from morainet.core.context import Context
-    from morainet.core.models import AgentResult, Message, Usage
+    from morainet.core.models import AgentResult, Usage
 
     store = InMemoryCheckpointStore()
     hook = CheckpointHook(store=store)

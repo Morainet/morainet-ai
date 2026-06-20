@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import json
 
-import pytest
 
 from morainet.core.agent import Agent
 from morainet.core.context import Context
 from morainet.core.models import (
-    AgentResult,
     ChatResponse,
     Message,
     StepStatus,

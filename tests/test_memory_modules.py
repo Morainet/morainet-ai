@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from morainet.core.models import Message, Role
-from morainet.memory.base import Embedder, Memory, VectorStore
+from morainet.memory.base import VectorStore
 from morainet.memory.composite import CompositeMemory
 from morainet.memory.embeddings import HashEmbedder, _features
 from morainet.memory.long_memory import LongMemory

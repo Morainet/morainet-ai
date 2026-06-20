@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import os
 import tempfile
 
-import pytest
 
 from morainet.mcp.cache import MCPResourceCache
 from morainet.mcp.convert import mcp_tool_to_tool
@@ -61,7 +59,7 @@ async def test_mcp_tool_to_tool_minimal():
 
 async def test_mcp_tool_to_tool_no_input_schema():
     async def caller(name, kwargs):
-        return f"ok"
+        return "ok"
 
     descriptor = {"name": "no_schema"}
     t = mcp_tool_to_tool(descriptor, caller)

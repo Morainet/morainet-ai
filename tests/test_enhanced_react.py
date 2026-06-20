@@ -2,26 +2,20 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
 
 import pytest
 
 from morainet.core.agent import Agent
 from morainet.core.context import Context
 from morainet.core.models import (
-    AgentResult,
     ChatResponse,
     Message,
-    Step,
-    StepStatus,
-    ToolCall,
     Usage,
 )
 from morainet.exceptions import MaxStepsExceededError
 from morainet.providers.mock import MockProvider
 from morainet.reasoning.enhanced_react import (
     EnhancedReActStrategy,
-    _ENHANCED_PROMPT,
     _VERIFY_PROMPT,
 )
 from morainet.tools import tool

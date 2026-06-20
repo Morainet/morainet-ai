@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 
-from morainet.core.models import ChatResponse, Message, Role, Usage
+from morainet.core.models import ChatResponse, Message
 from morainet.reasoning.context_compressor import (
     CompressionResult,
     ContextCompressor,

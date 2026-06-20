@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 
 from morainet.core.context import Context
-from morainet.core.models import Message, Step, StepStatus, ToolCall, Usage
-from morainet.exceptions import BudgetExceededError, MaxConsecutiveErrorsError, ToolError
+from morainet.core.models import Step, StepStatus, ToolCall, Usage
+from morainet.exceptions import BudgetExceededError, MaxConsecutiveErrorsError
 from morainet.reasoning.base import (
     enforce_budget,
     enforce_consecutive_errors,
@@ -153,7 +153,6 @@ async def test_execute_tool_dangerous_denied():
 
 
 async def test_execute_tool_dangerous_approved_async():
-    import asyncio
     async def async_approve(name, args):
         return True
 

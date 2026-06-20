@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import json
 import os
 import tempfile
 import time
 
-import pytest
 
 from morainet.reasoning.tool_cache import CacheEntry, ToolCache
 
