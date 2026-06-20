@@ -1,7 +1,8 @@
+"""Tests for morainet.engineering.circuit_breaker."""
+
 from __future__ import annotations
 
 import time
-from unittest.mock import patch
 
 import pytest
 
@@ -10,203 +11,206 @@ from morainet.exceptions import CircuitBreakerOpenError
 
 
 # ---------------------------------------------------------------------------
-# CircuitState
+# Construction & initial state
 # ---------------------------------------------------------------------------
 
-def test_circuit_state_enum_values():
+def test_default_construction():
+    cb = CircuitBreaker()
+    assert cb.state == CircuitState.CLOSED
+    assert cb.is_open is False
+    assert cb.failure_threshold == 5
+    assert cb.cooldown_seconds == 30.0
+    assert cb.half_open_max_calls == 1
+    assert cb.success_threshold == 2
+    assert cb.name == "default"
+
+
+def test_custom_construction():
+    cb = CircuitBreaker(
+        failure_threshold=3,
+        cooldown_seconds=10.0,
+        half_open_max_calls=2,
+        success_threshold=1,
+        name="custom",
+    )
+    assert cb.failure_threshold == 3
+    assert cb.cooldown_seconds == 10.0
+    assert cb.half_open_max_calls == 2
+    assert cb.success_threshold == 1
+    assert cb.name == "custom"
+
+
+# ---------------------------------------------------------------------------
+# State enum
+# ---------------------------------------------------------------------------
+
+def test_circuit_state_values():
     assert CircuitState.CLOSED.value == "closed"
     assert CircuitState.OPEN.value == "open"
     assert CircuitState.HALF_OPEN.value == "half_open"
 
 
 # ---------------------------------------------------------------------------
-# Initialization
+# CLOSED → OPEN (failure threshold)
 # ---------------------------------------------------------------------------
 
-def test_default_initialization():
-    breaker = CircuitBreaker()
-    assert breaker.failure_threshold == 5
-    assert breaker.cooldown_seconds == 30.0
-    assert breaker.half_open_max_calls == 1
-    assert breaker.success_threshold == 2
-    assert breaker.name == "default"
-    assert breaker._state == CircuitState.CLOSED
+def test_closed_to_open_on_threshold():
+    cb = CircuitBreaker(failure_threshold=3)
+    cb.on_failure()
+    cb.on_failure()
+    assert cb.state == CircuitState.CLOSED
+    cb.on_failure()
+    assert cb.state == CircuitState.OPEN
+    assert cb.is_open is True
 
 
-def test_custom_initialization():
-    breaker = CircuitBreaker(
-        failure_threshold=3,
-        cooldown_seconds=10.0,
-        half_open_max_calls=2,
-        success_threshold=3,
-        name="my-breaker",
-    )
-    assert breaker.failure_threshold == 3
-    assert breaker.cooldown_seconds == 10.0
-    assert breaker.name == "my-breaker"
+def test_success_resets_failure_count():
+    cb = CircuitBreaker(failure_threshold=3)
+    cb.on_failure()
+    cb.on_failure()
+    cb.on_success()
+    assert cb.state == CircuitState.CLOSED  # failure count reset
+    cb.on_failure()
+    cb.on_failure()
+    assert cb.state == CircuitState.CLOSED
 
 
 # ---------------------------------------------------------------------------
-# State property
+# OPEN → HALF_OPEN (cooldown)
 # ---------------------------------------------------------------------------
 
-def test_state_initial():
-    breaker = CircuitBreaker()
-    assert breaker.state == CircuitState.CLOSED
-    assert breaker.is_open is False
+def test_open_to_half_open_after_cooldown():
+    cb = CircuitBreaker(failure_threshold=1, cooldown_seconds=0.0)
+    cb.on_failure()
+    # Cooldown is 0, so immediately transitions to HALF_OPEN
+    assert cb.state == CircuitState.HALF_OPEN
 
 
-# ---------------------------------------------------------------------------
-# on_failure
-# ---------------------------------------------------------------------------
-
-def test_on_failure_increments_count():
-    breaker = CircuitBreaker()
-    breaker.on_failure()
-    assert breaker._failure_count == 1
-
-
-def test_on_failure_transitions_to_open_after_threshold():
-    breaker = CircuitBreaker(failure_threshold=3)
-    breaker.on_failure()
-    breaker.on_failure()
-    assert breaker._state == CircuitState.CLOSED
-    breaker.on_failure()
-    assert breaker._state == CircuitState.OPEN
-    assert breaker.is_open is True
-
-
-def test_on_failure_in_half_open_transitions_back_to_open():
-    breaker = CircuitBreaker(failure_threshold=3, cooldown_seconds=0)
-    # Force to OPEN
-    for _ in range(3):
-        breaker.on_failure()
-    assert breaker._state == CircuitState.OPEN
-    # After cooldown=0, should go to HALF_OPEN
-    breaker._transition()
-    assert breaker._state == CircuitState.HALF_OPEN
-    # Failure in HALF_OPEN goes back to OPEN
-    breaker.on_failure()
-    assert breaker._state == CircuitState.OPEN
+def test_open_stays_open_during_cooldown():
+    cb = CircuitBreaker(failure_threshold=1, cooldown_seconds=3600.0)
+    cb.on_failure()
+    assert cb.state == CircuitState.OPEN
+    # Check again - still OPEN
+    assert cb.state == CircuitState.OPEN
+    assert cb.is_open is True
 
 
 # ---------------------------------------------------------------------------
-# _transition (OPEN -> HALF_OPEN)
+# HALF_OPEN behavior
 # ---------------------------------------------------------------------------
 
-def test_transition_open_to_half_open_after_cooldown():
-    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=30.0)
-    breaker.on_failure()
-    assert breaker._state == CircuitState.OPEN
+def test_half_open_success_then_close():
+    cb = CircuitBreaker(failure_threshold=1, cooldown_seconds=0.0, success_threshold=2)
+    cb.on_failure()
+    # force transition now
+    cb._state = CircuitState.HALF_OPEN
+    cb._half_open_calls = 0
 
-    # Simulate time passing
-    with patch.object(time, "monotonic", return_value=breaker._opened_at + 31.0):
-        breaker._transition()
-        assert breaker._state == CircuitState.HALF_OPEN
+    cb.on_success()
+    cb.on_success()
+    assert cb.state == CircuitState.CLOSED
 
 
-def test_transition_stays_open_before_cooldown():
-    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=30.0)
-    breaker.on_failure()
-    assert breaker._state == CircuitState.OPEN
+def test_half_open_failure_reopens():
+    cb = CircuitBreaker(failure_threshold=1)
+    cb.on_failure()
+    cb._state = CircuitState.HALF_OPEN
+    cb._half_open_calls = 0
 
-    with patch.object(time, "monotonic", return_value=breaker._opened_at + 10.0):
-        breaker._transition()
-        assert breaker._state == CircuitState.OPEN
+    cb.on_failure()
+    assert cb.state == CircuitState.OPEN
 
 
 # ---------------------------------------------------------------------------
-# __aenter__ / __aexit__
+# Async context manager: __aenter__ / __aexit__
 # ---------------------------------------------------------------------------
 
-async def test_aenter_when_closed_allows_entry():
-    breaker = CircuitBreaker()
-    async with breaker:
-        assert breaker._state == CircuitState.CLOSED
+async def test_aenter_when_closed():
+    cb = CircuitBreaker()
+    result = await cb.__aenter__()
+    assert result is cb
+    assert cb.state == CircuitState.CLOSED
 
 
-async def test_aenter_when_open_raises():
-    breaker = CircuitBreaker(failure_threshold=1)
-    breaker.on_failure()
+async def test_aenter_raises_when_open():
+    cb = CircuitBreaker(failure_threshold=1, cooldown_seconds=999.0)
+    cb.on_failure()
+    assert cb.state == CircuitState.OPEN
+
     with pytest.raises(CircuitBreakerOpenError):
-        async with breaker:
-            pass
+        await cb.__aenter__()
 
 
-async def test_aenter_when_half_open_allows_entry():
-    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=0)
-    breaker.on_failure()
-    breaker._transition()
-    assert breaker._state == CircuitState.HALF_OPEN
-    async with breaker:
-        pass
+async def test_aenter_half_open_max_calls_exceeded():
+    cb = CircuitBreaker(half_open_max_calls=1)
+    cb._state = CircuitState.HALF_OPEN
+    cb._half_open_calls = 1  # already at max
 
-
-async def test_aenter_when_half_open_max_calls_reached():
-    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=0, half_open_max_calls=0)
-    breaker.on_failure()
-    breaker._transition()
     with pytest.raises(CircuitBreakerOpenError):
-        async with breaker:
-            pass
+        await cb.__aenter__()
 
 
 async def test_aexit_on_exception_calls_on_failure():
-    breaker = CircuitBreaker(failure_threshold=3)
+    cb = CircuitBreaker(failure_threshold=3)
+    await cb.__aexit__(ValueError, ValueError("boom"), None)
+    assert cb._failure_count == 1
+
+
+async def test_aexit_no_exception_no_failure():
+    cb = CircuitBreaker(failure_threshold=3)
+    await cb.__aexit__(None, None, None)
+    assert cb._failure_count == 0
+
+
+# ---------------------------------------------------------------------------
+# Async context manager: full usage pattern
+# ---------------------------------------------------------------------------
+
+async def test_async_with_closed():
+    cb = CircuitBreaker()
+    async with cb:
+        cb.on_success()
+    assert cb.state == CircuitState.CLOSED
+
+
+async def test_async_with_exception_triggers_failure():
+    cb = CircuitBreaker(failure_threshold=2)
     try:
-        async with breaker:
-            raise ValueError("boom")
-    except ValueError:
+        async with cb:
+            raise RuntimeError("test error")
+    except RuntimeError:
         pass
-    assert breaker._failure_count == 1
-
-
-async def test_aexit_no_exception_does_not_call_failure():
-    breaker = CircuitBreaker(failure_threshold=3)
-    async with breaker:
-        pass
-    assert breaker._failure_count == 0
+    assert cb._failure_count == 1
 
 
 # ---------------------------------------------------------------------------
-# on_success
+# Reset
 # ---------------------------------------------------------------------------
 
-def test_on_success_in_closed_resets_failure_count():
-    breaker = CircuitBreaker(failure_threshold=5)
-    breaker.on_failure()
-    breaker.on_failure()
-    assert breaker._failure_count == 2
-    breaker.on_success()
-    assert breaker._failure_count == 0
+def test_reset():
+    cb = CircuitBreaker(failure_threshold=1)
+    cb.on_failure()
+    assert cb.state == CircuitState.OPEN
 
-
-def test_on_success_in_half_open_transitions_to_closed_after_threshold():
-    breaker = CircuitBreaker(failure_threshold=1, cooldown_seconds=0, success_threshold=2)
-    breaker.on_failure()
-    breaker._transition()
-    assert breaker._state == CircuitState.HALF_OPEN
-
-    breaker.on_success()
-    assert breaker._state == CircuitState.HALF_OPEN
-    assert breaker._success_count == 1
-
-    breaker.on_success()
-    assert breaker._state == CircuitState.CLOSED
-    assert breaker._failure_count == 0
-    assert breaker._success_count == 0
+    cb.reset()
+    assert cb.state == CircuitState.CLOSED
+    assert cb._failure_count == 0
+    assert cb._success_count == 0
+    assert cb._half_open_calls == 0
 
 
 # ---------------------------------------------------------------------------
-# reset
+# aexit with BaseException subclasses (keyboard interrupt, etc.)
 # ---------------------------------------------------------------------------
 
-def test_reset_to_closed():
-    breaker = CircuitBreaker(failure_threshold=1)
-    breaker.on_failure()
-    assert breaker._state == CircuitState.OPEN
-    breaker.reset()
-    assert breaker._state == CircuitState.CLOSED
-    assert breaker._failure_count == 0
-    assert breaker._success_count == 0
-    assert breaker._half_open_calls == 0
+async def test_aexit_on_base_exception():
+    cb = CircuitBreaker(failure_threshold=3)
+    await cb.__aexit__(KeyboardInterrupt, KeyboardInterrupt(), None)
+    assert cb._failure_count == 1
+
+
+async def test_aexit_on_asyncio_cancelled():
+    import asyncio
+    cb = CircuitBreaker(failure_threshold=3)
+    await cb.__aexit__(asyncio.CancelledError, asyncio.CancelledError(), None)
+    assert cb._failure_count == 1

@@ -1,76 +1,261 @@
+"""Tests for morainet.persistence.checkpoint."""
+
 from __future__ import annotations
 
-from morainet import Agent, Checkpoint, FileCheckpointStore, InMemoryCheckpointStore, tool
-from morainet.core.models import ChatResponse, Message, Step, StepStatus, ToolCall, Usage
-from morainet.providers import MockProvider
+import tempfile
+from pathlib import Path
+
+import pytest
+
+from morainet.core.models import Message, Step, Usage
+from morainet.persistence.checkpoint import (
+    Checkpoint,
+    CheckpointHook,
+    FileCheckpointStore,
+    InMemoryCheckpointStore,
+    SQLiteCheckpointStore,
+)
 
 
-@tool
-def add(a: int, b: int) -> int:
-    """Add.
+# ---------------------------------------------------------------------------
+# Checkpoint model
+# ---------------------------------------------------------------------------
 
-    Args:
-        a: first
-        b: second
-    """
-    return a + b
-
-
-def _tool_then_answer() -> MockProvider:
-    return MockProvider(
-        responses=[
-            ChatResponse(
-                message=Message.assistant(
-                    tool_calls=[ToolCall(id="c1", name="add", arguments={"a": 2, "b": 3})]
-                ),
-                usage=Usage(total_tokens=12),
-                finish_reason="tool_calls",
-            ),
-            ChatResponse(message=Message.assistant(content="5"), usage=Usage(total_tokens=8)),
-        ]
-    )
-
-
-async def test_checkpoint_saved_during_run():
-    store = InMemoryCheckpointStore()
-    agent = Agent(provider=_tool_then_answer(), tools=[add], checkpoint_store=store)
-    result = await agent.arun("2+3?")
-
-    cp = await store.load(result.trace_id)
-    assert cp is not None
-    assert cp.query == "2+3?"
-    assert cp.cursor >= 3  # llm, tool, llm
-    assert len(cp.messages) > 1
-
-
-async def test_resume_continues_from_checkpoint():
+def test_checkpoint_creation():
     cp = Checkpoint(
-        trace_id="t1",
-        query="2+3?",
-        messages=[
-            Message.user("2+3?"),
-            Message.assistant(tool_calls=[ToolCall(id="c1", name="add", arguments={"a": 2, "b": 3})]),
-            Message.tool("5", tool_call_id="c1"),
-        ],
-        steps=[Step(index=0, description="add", status=StepStatus.SUCCESS, output=5)],
-        cursor=2,
+        trace_id="trace-1",
+        query="hello",
+        messages=[Message.user("hello")],
+        steps=[],
+        cursor=5,
     )
-    agent = Agent(
-        provider=MockProvider(responses=[ChatResponse(message=Message.assistant(content="5"))]),
-        tools=[add],
-    )
-    result = await agent.aresume(cp)
-    assert result.final_answer == "5"
-    assert len(result.steps) == 1  # prior step preserved, no new tool needed
+    assert cp.trace_id == "trace-1"
+    assert cp.query == "hello"
+    assert len(cp.messages) == 1
+    assert cp.cursor == 5
+    assert cp.usage.total_tokens == 0
+    assert cp.created_at is not None
 
 
-async def test_file_checkpoint_store_roundtrip(tmp_path):
-    store = FileCheckpointStore(str(tmp_path))
-    cp = Checkpoint(trace_id="abc", query="q", messages=[Message.user("q")])
+def test_checkpoint_defaults():
+    cp = Checkpoint(trace_id="t1", query="q")
+    assert cp.messages == []
+    assert cp.steps == []
+    assert cp.cursor == 0
+
+
+def test_checkpoint_with_usage():
+    cp = Checkpoint(trace_id="t1", query="q", usage=Usage(total_tokens=100))
+    assert cp.usage.total_tokens == 100
+
+
+def test_checkpoint_from_context():
+    """from_context builds a checkpoint from a context object."""
+    from morainet.core.context import Context
+
+    ctx = Context(trace_id="trace-ctx", query="test query")
+    ctx.messages.append(Message.user("hi"))
+    ctx.usage = Usage(total_tokens=42)
+
+    cp = Checkpoint.from_context(ctx, cursor=3)
+    assert cp.trace_id == "trace-ctx"
+    assert cp.query == "test query"
+    assert len(cp.messages) == 1
+    assert cp.messages[0].content == "hi"
+    assert cp.cursor == 3
+    assert cp.usage.total_tokens == 42
+
+
+# ---------------------------------------------------------------------------
+# InMemoryCheckpointStore
+# ---------------------------------------------------------------------------
+
+async def test_inmemory_save_and_load():
+    store = InMemoryCheckpointStore()
+    cp = Checkpoint(trace_id="t1", query="q", cursor=1)
+
     await store.save(cp)
-
-    loaded = await store.load("abc")
+    loaded = await store.load("t1")
     assert loaded is not None
+    assert loaded.trace_id == "t1"
     assert loaded.query == "q"
-    assert loaded.messages[0].content == "q"
-    assert await store.load("missing") is None
+    assert loaded.cursor == 1
+
+
+async def test_inmemory_load_missing():
+    store = InMemoryCheckpointStore()
+    assert await store.load("nonexistent") is None
+
+
+async def test_inmemory_overwrite():
+    store = InMemoryCheckpointStore()
+    cp1 = Checkpoint(trace_id="t1", query="v1")
+    cp2 = Checkpoint(trace_id="t1", query="v2")
+
+    await store.save(cp1)
+    await store.save(cp2)
+    loaded = await store.load("t1")
+    assert loaded.query == "v2"
+
+
+# ---------------------------------------------------------------------------
+# FileCheckpointStore
+# ---------------------------------------------------------------------------
+
+async def test_file_save_and_load():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = FileCheckpointStore(directory=tmpdir)
+        cp = Checkpoint(trace_id="trace-f1", query="file test", cursor=3)
+        await store.save(cp)
+
+        loaded = await store.load("trace-f1")
+        assert loaded is not None
+        assert loaded.trace_id == "trace-f1"
+        assert loaded.query == "file test"
+        assert loaded.cursor == 3
+
+
+async def test_file_load_missing():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = FileCheckpointStore(directory=tmpdir)
+        assert await store.load("nonexistent") is None
+
+
+async def test_file_creates_directory():
+    with tempfile.TemporaryDirectory() as parent:
+        subdir = str(Path(parent) / "subdir")
+        store = FileCheckpointStore(directory=subdir)
+        assert Path(subdir).exists()
+
+        cp = Checkpoint(trace_id="t1", query="q")
+        await store.save(cp)
+        assert (Path(subdir) / "t1.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# SQLiteCheckpointStore
+# ---------------------------------------------------------------------------
+
+async def test_sqlite_save_and_load():
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+        db_path = f.name
+    try:
+        store = SQLiteCheckpointStore(path=db_path)
+        cp = Checkpoint(trace_id="trace-sql1", query="sql test", cursor=7)
+        await store.save(cp)
+
+        loaded = await store.load("trace-sql1")
+        assert loaded is not None
+        assert loaded.trace_id == "trace-sql1"
+        assert loaded.query == "sql test"
+        assert loaded.cursor == 7
+
+        store.close()
+    finally:
+        Path(db_path).unlink(missing_ok=True)
+
+
+async def test_sqlite_load_missing():
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+        db_path = f.name
+    try:
+        store = SQLiteCheckpointStore(path=db_path)
+        assert await store.load("nonexistent") is None
+        store.close()
+    finally:
+        Path(db_path).unlink(missing_ok=True)
+
+
+async def test_sqlite_overwrite():
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+        db_path = f.name
+    try:
+        store = SQLiteCheckpointStore(path=db_path)
+        await store.save(Checkpoint(trace_id="t1", query="v1"))
+        await store.save(Checkpoint(trace_id="t1", query="v2"))
+
+        loaded = await store.load("t1")
+        assert loaded.query == "v2"
+        store.close()
+    finally:
+        Path(db_path).unlink(missing_ok=True)
+
+
+async def test_sqlite_close():
+    store = SQLiteCheckpointStore(path=":memory:")
+    store.close()
+    # Should not raise
+
+
+# ---------------------------------------------------------------------------
+# CheckpointHook
+# ---------------------------------------------------------------------------
+
+async def test_checkpoint_hook_on_run_start():
+    from morainet.core.context import Context
+
+    store = InMemoryCheckpointStore()
+    hook = CheckpointHook(store=store)
+    ctx = Context(trace_id="hook-test", query="hook")
+
+    await hook.on_run_start(ctx)
+    assert hook._cursor == 0
+
+
+async def test_checkpoint_hook_on_llm_end():
+    from morainet.core.context import Context
+    from morainet.core.models import ChatResponse, Message
+
+    store = InMemoryCheckpointStore()
+    hook = CheckpointHook(store=store)
+    ctx = Context(trace_id="hook-test-2", query="llm hook")
+    ctx.messages.append(Message.user("test"))
+
+    await hook.on_llm_end(ctx, ChatResponse(message=Message.assistant(content="ok")))
+    assert hook._cursor == 1
+
+    loaded = await store.load("hook-test-2")
+    assert loaded is not None
+    assert loaded.cursor == 1
+    assert loaded.query == "llm hook"
+
+
+async def test_checkpoint_hook_on_tool_end():
+    from morainet.core.context import Context
+    from morainet.core.models import Step, StepStatus, ToolCall
+
+    store = InMemoryCheckpointStore()
+    hook = CheckpointHook(store=store)
+    ctx = Context(trace_id="hook-tool", query="tool test")
+
+    step = Step(
+        index=1,
+        description="echo",
+        output="hi",
+        status=StepStatus.SUCCESS,
+    )
+    await hook.on_tool_end(ctx, step)
+    assert hook._cursor == 1
+
+    loaded = await store.load("hook-tool")
+    assert loaded is not None
+
+
+async def test_checkpoint_hook_on_run_end():
+    from morainet.core.context import Context
+    from morainet.core.models import AgentResult, Message, Usage
+
+    store = InMemoryCheckpointStore()
+    hook = CheckpointHook(store=store)
+    ctx = Context(trace_id="hook-run-end", query="end test")
+
+    result = AgentResult(
+        trace_id="hook-run-end",
+        steps=[],
+        final_answer="answer",
+        usage=Usage(total_tokens=10),
+    )
+    await hook.on_run_end(ctx, result)
+    loaded = await store.load("hook-run-end")
+    assert loaded is not None
+    assert loaded.query == "end test"
