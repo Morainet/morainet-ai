@@ -127,5 +127,28 @@ class Settings(BaseSettings):
     plugin_marketplace_path: str = ""           # local plugins directory path
     plugin_marketplace_index_url: str = ""      # remote registry index URL
 
+    # -- distributed scheduling ---------------------------------------------
+    distributed_enabled: bool = False             # enable distributed mode
+    distributed_backend: str = "redis"            # redis | rabbitmq
+    distributed_redis_url: str = "redis://localhost:6379/0"
+    distributed_amqp_url: str = "amqp://localhost:5672//"
+    distributed_queue: str = "morainet:wf"         # default task queue name
+    distributed_worker_timeout: float = 300.0      # per-task timeout
+    distributed_worker_poll: float = 0.5           # result poll interval
+    distributed_heartbeat_ttl: int = 30            # node heartbeat TTL (seconds)
+    distributed_replicas: int = 2                  # checkpoint replication factor
+
+    # -- cluster management ------------------------------------------------
+    cluster_node_id: str = ""                      # this node's ID
+    cluster_role: str = "worker"                   # worker | coordinator | edge | observer
+    cluster_host: str = "localhost"
+    cluster_port: int = 8090
+    cluster_virtual_nodes: int = 128               # consistent hash ring vnodes
+
+    # -- load balancer -----------------------------------------------------
+    load_balancer_strategy: str = "weighted_round_robin"  # round_robin | weighted_round_robin
+    load_balancer_cloud_endpoint: str = "http://localhost:8080"  # cloud cluster entrypoint
+    load_balancer_hybrid_threshold: float = 0.5     # edge/cloud routing complexity threshold
+
 
 settings = Settings()

@@ -54,5 +54,12 @@ MORAINET_OLLAMA_MODEL=qwen2.5:3b python examples/coding_assistant.py
 | 多模态基础 | `multimodal_basic.py` | ContentPart 类型 + Message 构建器 + 多模态工具注册 + Provider 适配器路由 |
 | 多模态 RAG | `multimodal_rag.py` | MultimodalDocument + ImageCaptioner + MultimodalRAG + VisionReasoningChain + Agent 集成 |
 
+## 分布式 Agent 调度
+
+| 场景 | 示例 | 涉及能力 |
+| --- | --- | --- |
+| 分布式工作流 | `distributed_workflow.py` | Task Queue (Redis/RabbitMQ) + DistributedParallelScheduler + TaskEnvelope 序列化 + 进度追踪 |
+| 分布式集群 | `distributed_cluster.py` | ConsistentHashRing 会话分片 + LoadBalancer + HybridRouter 边缘/云端路由 + DistributedRunTrace + 分布式断点恢复 |
+
 > macOS + Homebrew Python：命令行需 `export DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib`
 > （编辑器 F5 已在 `.vscode` 配好）。
