@@ -133,5 +133,63 @@ Level 3 — Factual Knowledge Base (长期知识库)
   └─ Temporal      → 决策时间线 + 回顾历史
 ```
 
+## 多智能体协作高阶编排
+
+| 场景 | 示例 | 涉及能力 |
+| --- | --- | --- |
+| A2A 原生通信协议 | `multiagent_collaboration_demo.py` | AgentIdentity + A2AChannel + A2ABus 共享消息总线 + handshake/query/delegate/event |
+| 辩论拓扑 | `multiagent_collaboration_demo.py` | DebateTeam 多轮辩论 + Arbiter 仲裁 + 开场/反驳/总结 |
+| 评审拓扑 | `multiagent_collaboration_demo.py` | ReviewTeam 产出→审查→修改循环 + 多审查员 |
+| 分层委托拓扑 | `multiagent_collaboration_demo.py` | HierarchicalTeam 主 Agent 分解→委托专家→汇总 |
+| 共享内存池 | `multiagent_collaboration_demo.py` | SharedMemoryPool 多 Agent 共享记忆总线 |
+| 管道 & 路由 | `multiagent_collaboration_demo.py` | Pipeline 顺序编排 + Router 条件路由 |
+| 群聊协作 | `multiagent_collaboration_demo.py` | GroupChat 多 Agent 轮流发言 + 共享对话历史 |
+| 动态 Agent 生成 | `multiagent_collaboration_demo.py` | AgentFactory spawn/destroy + AgentBlueprint 模板 |
+| 资源 & 权限隔离 | `multiagent_collaboration_demo.py` | AgentSandbox + ResourceQuota + PermissionProfile + MemoryNamespace |
+| Agent 池化复用 | `multiagent_collaboration_demo.py` | AgentPool prewarm + acquire/release + 多策略调度 |
+
+### 核心模块速查
+
+```python
+from morainet import (
+    # A2A 原生协议
+    A2AChannel, A2ABus, A2AMessage, AgentIdentity,
+    # 协作拓扑
+    Debate, DebateTeam, ReviewTeam, HierarchicalTeam,
+    SharedMemoryPool, Pipeline, Stage, Router, Route,
+    GroupChat, GroupChatMember, TeamOrchestrator,
+    # 动态 Agent 工厂
+    AgentFactory, AgentBlueprint, AgentPool,
+    # 资源 & 权限隔离
+    AgentSandbox, ResourceQuota, PermissionProfile, MemoryNamespace,
+)
+```
+
+### 多 Agent 拓扑架构
+
+```
+A2A Protocol (原生通信，无需工具中转)
+├─ A2AChannel      — 点对点双向通道 (handshake, query, delegate)
+└─ A2ABus          — 多对多消息总线 (broadcast, topic filter)
+
+Topologies (协作模式)
+├─ Debate / DebateTeam       — 多轮辩论 + Arbiter 仲裁
+├─ ReviewTeam                — 产出→审查→修改循环
+├─ HierarchicalTeam          — 任务分解→委托专家→汇总
+├─ SharedMemoryPool          — 共享记忆池隐式协作
+├─ Pipeline / Stage          — 顺序流水线编排
+├─ Router / Route            — 条件路由到最佳 Agent
+└─ GroupChat                 — 多 Agent 轮流群聊
+
+Sandbox (资源 & 权限隔离)
+├─ ResourceQuota     — token/step/time 三向量限制
+├─ PermissionProfile — LIMITED/STANDARD/ELEVATED/FULL 四级权限
+└─ MemoryNamespace   — 每 Agent 独立记忆空间，互不可读
+
+Agent Lifecycle (动态生命周期)
+├─ AgentFactory      — Blueprint 模板 → spawn 生成 → destroy 销毁
+└─ AgentPool         — 预热 + acquire/release 复用 + 自动回收
+```
+
 > macOS + Homebrew Python：命令行需 `export DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib`
 > （编辑器 F5 已在 `.vscode` 配好）。
