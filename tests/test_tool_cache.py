@@ -119,12 +119,12 @@ def test_set_disabled_noop():
 # ---------------------------------------------------------------------------
 
 def test_ttl_expiry():
-    cache = ToolCache(ttl=0.001)  # very short TTL
+    cache = ToolCache(ttl=0.5)  # short TTL
     cache.set("echo", {"text": "hi"}, result="hi")
     # Entry should exist within TTL
     assert cache.get("echo", {"text": "hi"}) is not None
     # Wait for TTL to expire
-    time.sleep(0.01)
+    time.sleep(1.0)
     assert cache.get("echo", {"text": "hi"}) is None
 
 
