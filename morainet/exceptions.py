@@ -83,6 +83,10 @@ class MemoryStoreError(MorainetError):
     """Memory backend (vector store) failure."""
 
 
+class DocumentParseError(MorainetError):
+    """Document parsing failure (unsupported format, corrupt file, etc.)."""
+
+
 # --- Workflow errors -------------------------------------------------------
 
 

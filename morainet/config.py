@@ -28,5 +28,18 @@ class Settings(BaseSettings):
     max_retries: int = 3
     log_level: str = "INFO"
 
+    # -- vector store ----------------------------------------------------
+    vector_store_backend: str = "inmemory"  # inmemory | chroma | pgvector | qdrant | faiss | milvus
+    vector_store_path: str = ""             # disk path for chroma/faiss
+    vector_store_connection: str = ""       # connection string for pgvector/qdrant/milvus
+    vector_dimension: int = 1536            # embedding dimension (384 for all-MiniLM, 1536 for OpenAI)
+
+    # -- document parsing ------------------------------------------------
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
+    chunk_mode: str = "recursive"           # recursive | fixed
+    default_document_ttl: float = 0.0       # seconds, 0 = never expire
+    knowledge_base_path: str = ""           # catalogue directory for KnowledgeBase
+
 
 settings = Settings()

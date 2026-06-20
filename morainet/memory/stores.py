@@ -34,6 +34,16 @@ class InMemoryVectorStore(VectorStore):
         scored.sort(key=lambda x: x["score"], reverse=True)
         return scored[:top_k]
 
+    async def delete(self, item_id: str) -> bool:
+        for i, it in enumerate(self._items):
+            if it["id"] == item_id:
+                self._items.pop(i)
+                return True
+        return False
+
+    async def count(self) -> int:
+        return len(self._items)
+
     def __len__(self) -> int:
         return len(self._items)
 
@@ -76,3 +86,10 @@ class ChromaStore(VectorStore):
                 }
             )
         return out
+
+    async def delete(self, item_id: str) -> bool:
+        self._collection.delete(ids=[item_id])
+        return True
+
+    async def count(self) -> int:
+        return int(self._collection.count())

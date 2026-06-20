@@ -33,3 +33,11 @@ class VectorStore(ABC):
 
     @abstractmethod
     async def search(self, embedding: list[float], top_k: int) -> list[dict[str, Any]]: ...
+
+    async def delete(self, item_id: str) -> bool:
+        """Delete a single item by ID. Returns True if deleted."""
+        raise NotImplementedError(f"{type(self).__name__}.delete() is not implemented")
+
+    async def count(self) -> int:
+        """Return total number of stored items."""
+        raise NotImplementedError(f"{type(self).__name__}.count() is not implemented")

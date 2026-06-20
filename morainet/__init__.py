@@ -2,7 +2,24 @@
 
 from morainet.core import Agent, AgentResult, Message, Usage
 from morainet.debug import Debugger
-from morainet.memory import CompositeMemory, LongMemory, ShortMemory
+from morainet.memory import (
+    ChromaStore,
+    CompositeMemory,
+    CrossEncoderReranker,
+    DocumentLoader,
+    FaissStore,
+    HybridRetriever,
+    InMemoryVectorStore,
+    KnowledgeBase,
+    LLMReranker,
+    LongMemory,
+    MilvusStore,
+    PgVectorStore,
+    QdrantStore,
+    RAGPipeline,
+    ShortMemory,
+    create_vector_store,
+)
 from morainet.mcp import MCPClient
 from morainet.multiagent import (
     Debate,
@@ -38,9 +55,26 @@ __all__ = [
     "Usage",
     "Tool",
     "tool",
+    # Memory
     "CompositeMemory",
     "ShortMemory",
     "LongMemory",
+    # Vector stores
+    "InMemoryVectorStore",
+    "ChromaStore",
+    "PgVectorStore",
+    "QdrantStore",
+    "FaissStore",
+    "MilvusStore",
+    "create_vector_store",
+    # RAG
+    "DocumentLoader",
+    "HybridRetriever",
+    "CrossEncoderReranker",
+    "LLMReranker",
+    "RAGPipeline",
+    "KnowledgeBase",
+    # Existing
     "Workflow",
     "PromptTemplate",
     "ReasoningStrategy",
