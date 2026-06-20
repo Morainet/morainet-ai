@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import asyncio
 
-import pytest
-
 from morainet.multiagent.protocol import (
     A2ABus,
     A2AChannel,
@@ -268,6 +266,6 @@ async def test_bus_event_with_topic_filter():
 
 async def test_bus_close():
     bus = A2ABus()
-    ch = bus.subscribe("agent_a")
+    bus.subscribe("agent_a")
     await bus.close()
     assert bus._closed is True

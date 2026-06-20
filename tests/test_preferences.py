@@ -251,9 +251,9 @@ class TestTaskGoalStore:
         assert priorities == [Priority.CRITICAL, Priority.MEDIUM, Priority.LOW]
 
     def test_list_active_sorted_by_created_at(self):
-        g1 = self.store.create("First")
-        g2 = self.store.create("Second")
-        g3 = self.store.create("Third")
+        self.store.create("First")
+        self.store.create("Second")
+        self.store.create("Third")
         active = self.store.list_active(sort_by="created_at")
         assert len(active) == 3
         timestamps = [g.created_at for g in active]

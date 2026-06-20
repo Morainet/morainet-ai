@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from morainet.tools.audit import AuditEntry, AuditLogger, InMemoryAuditStore
 
 

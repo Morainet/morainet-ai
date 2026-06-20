@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-from unittest.mock import patch
 
 import pytest
 
@@ -160,7 +159,7 @@ class TestAgentFactory:
     def test_destroy_active_agent(self):
         bp = AgentBlueprint(role="coder", max_steps=5)
         self.factory.register_blueprint("coder", bp)
-        agent = self.factory.spawn("coder")
+        self.factory.spawn("coder")
         agents = self.factory.list_active()
         agent_id = agents[0].agent_id
         assert self.factory.destroy(agent_id) is True
@@ -229,7 +228,7 @@ class TestAgentFactory:
     def test_destroy_idle(self):
         bp = AgentBlueprint(role="coder", max_steps=3)
         self.factory.register_blueprint("coder", bp)
-        agent = self.factory.spawn("coder")
+        self.factory.spawn("coder")
         agents = self.factory.list_active()
         agent_id = agents[0].agent_id
 

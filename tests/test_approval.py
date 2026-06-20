@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from morainet.tools.approval import (
     ApprovalFlow,
     ApprovalRequest,
