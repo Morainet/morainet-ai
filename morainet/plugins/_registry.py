@@ -22,6 +22,7 @@ PLUGIN_GROUPS: dict[str, str] = {
     "tools": "morainet.tools",
     "memory": "morainet.memory",
     "strategies": "morainet.strategies",
+    "dag_schedulers": "morainet.dag_schedulers",
 }
 
 

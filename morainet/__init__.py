@@ -29,7 +29,7 @@ from morainet.memory import (
     ShortMemory,
     create_vector_store,
 )
-from morainet.mcp import MCPClient
+from morainet.mcp import MCPClient, MCPConnectionPool, MCPResourceCache
 from morainet.multiagent import (
     Debate,
     GroupChat,
@@ -50,7 +50,17 @@ from morainet.persistence import (
     RedisCheckpointStore,
     SQLiteCheckpointStore,
 )
-from morainet.plugins import PluginRegistry, plugins
+from morainet.plugins import (
+    PluginKind,
+    PluginManifest,
+    PluginMarketplace,
+    PluginRegistry,
+    PluginSpec,
+    RiskLevel,
+    marketplace,
+    plugins,
+)
+from morainet.plugins.spec import PLUGIN_ENTRY_POINT_GROUPS, PLUGIN_META_GROUP
 from morainet.prompts import PromptTemplate
 from morainet.providers import (
     CategorizedRetryPolicy,
@@ -110,7 +120,18 @@ from morainet.tools import (
     ToolPermissionError,
     tool,
 )
-from morainet.workflow import Workflow
+from morainet.workflow import (
+    NodeProgress,
+    ParallelScheduler,
+    ProgressScheduler,
+    Scheduler,
+    SchedulerProgress,
+    SchedulerRegistry,
+    SerialScheduler,
+    Workflow,
+    register_scheduler,
+    scheduler_registry,
+)
 
 __version__ = "1.0.0"
 
@@ -223,8 +244,29 @@ __all__ = [
     "SQLiteAuditStore",
     # Other
     "MCPClient",
+    "MCPConnectionPool",
+    "MCPResourceCache",
     "PluginRegistry",
     "plugins",
+    "PluginSpec",
+    "PluginKind",
+    "RiskLevel",
+    "PluginManifest",
+    "PluginMarketplace",
+    "marketplace",
+    "PLUGIN_ENTRY_POINT_GROUPS",
+    "PLUGIN_META_GROUP",
+    # Schedulers
+    "Scheduler",
+    "SerialScheduler",
+    "ParallelScheduler",
+    "ProgressScheduler",
+    "SchedulerProgress",
+    "NodeProgress",
+    "SchedulerRegistry",
+    "scheduler_registry",
+    "register_scheduler",
+    # Multi-agent
     "Pipeline",
     "Router",
     "GroupChat",

@@ -32,6 +32,7 @@ docx = ["python-docx>=1.1"]
 rerank = ["sentence-transformers>=3.0"]
 mcp = ["mcp>=1.0"]
 otel = ["opentelemetry-sdk>=1.20"]
+marketplace = ["tomli>=2.0"]
 rag = [
     "chromadb>=0.5",
     "qdrant-client>=1.9",

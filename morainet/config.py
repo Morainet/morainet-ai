@@ -112,5 +112,20 @@ class Settings(BaseSettings):
     retry_server_max: int = 3                  # max retries for server errors
     retry_server_base_delay: float = 2.0
 
+    # -- MCP connection pool -----------------------------------------------
+    mcp_pool_reconnect: bool = True            # auto-reconnect failed MCP servers
+    mcp_pool_reconnect_delay: float = 5.0      # seconds between reconnects
+    mcp_pool_reconnect_attempts: int = 3       # max reconnect attempts
+    mcp_pool_health_interval: float = 30.0     # health check interval in seconds
+
+    # -- MCP resource cache ------------------------------------------------
+    mcp_cache_ttl: float = 300.0               # seconds, 0 = no expiry
+    mcp_cache_max_size: int = 1000             # max cached entries per category
+    mcp_cache_path: str = ""                   # disk path for persistent cache
+
+    # -- Plugin marketplace ------------------------------------------------
+    plugin_marketplace_path: str = ""           # local plugins directory path
+    plugin_marketplace_index_url: str = ""      # remote registry index URL
+
 
 settings = Settings()
