@@ -25,7 +25,6 @@ import os
 import time
 from typing import Any
 
-from morainet.core.models import Message
 from morainet.tools import Tool
 
 

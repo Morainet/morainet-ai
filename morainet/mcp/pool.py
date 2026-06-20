@@ -22,10 +22,10 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator
+from typing import Any
 
 from morainet.exceptions import MorainetError
-from morainet.mcp.client import MCPClient, stdio_session
+from morainet.mcp.client import MCPClient
 from morainet.tools import Tool
 
 

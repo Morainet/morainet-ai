@@ -20,10 +20,9 @@ from enum import Enum
 from typing import Any, Callable
 
 from morainet.core.agent import Agent
-from morainet.core.models import AgentResult, Message, Role
+from morainet.core.models import Message
 from morainet.memory.base import Memory
 from morainet.multiagent.protocol import A2ABus, A2AChannel
-from morainet.multiagent.sandbox import MemoryNamespace
 from morainet.providers.base import Provider
 
 

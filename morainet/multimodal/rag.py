@@ -450,7 +450,7 @@ class VisionReasoningChain:
             f"Based on the following evidence, answer the question.\n\n"
             f"Question: {query}\n\n"
             f"Evidence:\n" + "\n\n".join(context_parts) + "\n\n"
-            f"Provide a comprehensive answer synthesizing all evidence."
+            "Provide a comprehensive answer synthesizing all evidence."
         )
 
         resp = await self.provider.chat([Message.user(synthesis_prompt)])

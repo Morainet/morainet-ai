@@ -17,14 +17,12 @@ Sedimentation flow:
 
 from __future__ import annotations
 
-import asyncio
-import time
 from typing import Any
 
 from morainet.core.models import Message, Role
 from morainet.memory.base import Embedder, Memory, VectorStore
 from morainet.memory.embeddings import HashEmbedder
-from morainet.memory.facts import Fact, FactStatus, FactStore
+from morainet.memory.facts import FactStore
 from morainet.memory.preferences import (
     GoalStatus,
     Priority,

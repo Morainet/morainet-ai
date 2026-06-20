@@ -11,7 +11,6 @@ Manages the full lifecycle of a multi-agent run:
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
 from morainet.core.agent import Agent
 from morainet.memory.base import Memory

@@ -7,7 +7,6 @@ AgentFactory   creates Agent instances from blueprints, enforces sandboxes,
 
 from __future__ import annotations
 
-import asyncio
 import time
 import uuid
 from dataclasses import dataclass, field

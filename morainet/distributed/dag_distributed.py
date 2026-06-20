@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import hashlib
 import inspect
 import json
 import time
@@ -34,7 +33,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from morainet.distributed.task_queue import TaskBackend, TaskProducer, TaskConsumer, Task, TaskResult
+from morainet.distributed.task_queue import TaskBackend, TaskProducer, TaskConsumer, Task
 from morainet.exceptions import MorainetError
 from morainet.workflow.dag_scheduler import (
     NodeProgress,

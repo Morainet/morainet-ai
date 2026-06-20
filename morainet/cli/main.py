@@ -13,10 +13,9 @@ workflow    Visualize workflow DAGs (mermaid / dot / interactive HTML).
 from __future__ import annotations
 
 import argparse
-import asyncio
 import importlib.util
+import inspect
 import json
-import os
 import sys
 import textwrap
 import time
@@ -62,10 +61,10 @@ def _get_agent_from_module(mod: Any) -> Any:
 
 def cmd_run(args: argparse.Namespace) -> None:
     """Execute a single query against an agent."""
-    print(f"=" * 60)
+    print("=" * 60)
     query = args.query
     print(f"Query: {query}")
-    print(f"-" * 60)
+    print("-" * 60)
 
     t0 = time.perf_counter()
 
@@ -81,7 +80,6 @@ def cmd_run(args: argparse.Namespace) -> None:
     else:
         # Default: use environment config
         from morainet import Agent
-        from morainet.config import settings
 
         provider_name = args.provider.lower()
         if provider_name == "openai":
@@ -189,13 +187,13 @@ def cmd_trace_export(args: argparse.Namespace) -> None:
         store_type = args.from_store
         if store_type == "sqlite":
             from morainet import SQLiteCheckpointStore
-            store = SQLiteCheckpointStore()
+            _store = SQLiteCheckpointStore()
         elif store_type == "file":
             from morainet import FileCheckpointStore
-            store = FileCheckpointStore(args.store_path or settings.checkpoint_file)
+            _store = FileCheckpointStore(args.store_path or settings.checkpoint_file)
         elif store_type == "redis":
             from morainet import RedisCheckpointStore
-            store = RedisCheckpointStore()
+            _store = RedisCheckpointStore()
         else:
             print(f"Unknown store type: {store_type}")
             return
@@ -209,7 +207,7 @@ def cmd_trace_export(args: argparse.Namespace) -> None:
 
         collector = TraceCollector()
         agent = Agent(provider=MockProvider(), hooks=[collector])
-        result = agent.run("What is the capital of France?")
+        _result = agent.run("What is the capital of France?")
         traces = [collector.trace.model_dump()]
 
     path = output_dir / f"trace_{int(time.time())}.json"
@@ -388,7 +386,6 @@ def _parse_docstring_params(doc: str) -> dict[str, str]:
     return result
 
 
-import inspect
 
 
 def cmd_workflow(args: argparse.Namespace) -> None:

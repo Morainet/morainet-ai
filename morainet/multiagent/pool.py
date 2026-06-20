@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
@@ -188,7 +188,7 @@ class AgentPool:
     # -- internals --
 
     def _create_agent(self) -> SpawnedAgent:
-        agent = self.factory.spawn(self.role)
+        _agent = self.factory.spawn(self.role)
         self._created += 1
         # Get the most recently spawned agent from the factory
         active = self.factory.list_active()

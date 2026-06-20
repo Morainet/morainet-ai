@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import base64
 import mimetypes
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Union as UnionType

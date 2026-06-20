@@ -220,7 +220,7 @@ def _workflow_to_json(workflow: Any) -> dict[str, Any]:
                 "name": name,
                 "deps": list(node.deps),
                 "level": next(
-                    (i for i, l in enumerate(levels) if name in l), -1
+                    (i for i, level in enumerate(levels) if name in level), -1
                 ),
             }
             for name, node in nodes.items()

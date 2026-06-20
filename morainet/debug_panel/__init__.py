@@ -20,13 +20,16 @@ Architecture
 from __future__ import annotations
 
 import asyncio
-import json
 import time
 import uuid
-from collections import defaultdict
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from morainet.core.context import Context
+    from morainet.core.models import ChatResponse
+    from morainet.core.results import AgentResult
+    from morainet.observability.step import Step
 
 from morainet.observability.hooks import Hook
 
@@ -162,12 +165,12 @@ class PanelHook(Hook):
         self._current_run_id = ""
         self._t0 = 0.0
 
-    def on_run_start(self, ctx: "Context") -> None:
+    def on_run_start(self, ctx: Context) -> None:
         self._current_run_id = ctx.trace_id
         self._t0 = time.perf_counter()
         self.store.start_run(ctx.trace_id, ctx.query, self.node_id)
 
-    def on_llm_end(self, ctx: "Context", response: "ChatResponse") -> None:
+    def on_llm_end(self, ctx: Context, response: ChatResponse) -> None:
         self.store.add_event(
             ctx.trace_id,
             "llm",
@@ -180,7 +183,7 @@ class PanelHook(Hook):
             },
         )
 
-    def on_tool_end(self, ctx: "Context", step: "Step") -> None:
+    def on_tool_end(self, ctx: Context, step: Step) -> None:
         self.store.add_event(
             ctx.trace_id,
             "tool",
@@ -192,7 +195,7 @@ class PanelHook(Hook):
             },
         )
 
-    def on_run_end(self, ctx: "Context", result: "AgentResult") -> None:
+    def on_run_end(self, ctx: Context, result: AgentResult) -> None:
         total_ms = (time.perf_counter() - self._t0) * 1000
         self.store.finish_run(
             ctx.trace_id,

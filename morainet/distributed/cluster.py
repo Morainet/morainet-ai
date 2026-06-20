@@ -37,10 +37,10 @@ import hashlib
 import json
 import time
 import uuid
-from bisect import bisect, bisect_left
+from bisect import bisect_left
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Coroutine, Iterable
+from typing import Any, Callable, Coroutine
 
 
 # ---------------------------------------------------------------------------

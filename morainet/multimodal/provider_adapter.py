@@ -116,7 +116,6 @@ class MultimodalAdapter:
                 for item in m.content:  # type: ignore[union-attr]
                     if item.get("type") == "image_base64":
                         # Normalize to standard image_url + data URI
-                        import base64
                         b64 = item.get("data", "")
                         media = item.get("media_type", "image/jpeg")
                         data_uri = f"data:{media};base64,{b64}"
@@ -217,8 +216,6 @@ class MultimodalAdapter:
     def _build_anthropic_blocks(self, content: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Build Anthropic content blocks from a multimodal content list."""
         blocks: list[dict[str, Any]] = []
-        import base64
-        import mimetypes
 
         for item in content:
             t = item.get("type", "text")
@@ -337,7 +334,6 @@ class MultimodalAdapter:
     def _build_gemini_parts(self, content: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Build Gemini parts from a multimodal content list."""
         parts: list[dict[str, Any]] = []
-        import base64
 
         for item in content:
             t = item.get("type", "text")

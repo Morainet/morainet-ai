@@ -34,9 +34,9 @@ import json
 import os
 import subprocess
 import sys
-from dataclasses import dataclass, field
-from importlib.metadata import EntryPoint, entry_points
-from typing import Any, Callable
+from dataclasses import dataclass
+from importlib.metadata import entry_points
+from typing import Any
 
 from morainet.exceptions import MorainetError
 from morainet.plugins.spec import (

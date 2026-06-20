@@ -11,11 +11,8 @@ panel is not running.
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
-import sys
 import textwrap
-from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
@@ -636,10 +633,10 @@ def start_server(host: str = "127.0.0.1", port: int = 8080) -> None:
             pass
 
     server = HTTPServer((host, port), PanelHandler)
-    print(f"\n  Morainet Debug Panel")
-    print(f"  ────────────────────")
+    print("\n  Morainet Debug Panel")
+    print("  ────────────────────")
     print(f"  Listening on http://{host}:{port}")
-    print(f"  Press Ctrl+C to stop\n")
+    print("  Press Ctrl+C to stop\n")
 
     try:
         server.serve_forever()

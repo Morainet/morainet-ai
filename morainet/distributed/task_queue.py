@@ -24,7 +24,6 @@ Usage::
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import time
 import uuid
@@ -220,7 +219,7 @@ class RedisBackend(TaskBackend):
         result_key = self._result_key(task_id)
         raw = await self.client.get(result_key)
         if raw:
-            stored = json.loads(raw)
+            _stored = json.loads(raw)
             # Remove result to allow re-enqueue
             await self.client.delete(result_key)
         # Fallback: just note failure via result
@@ -289,7 +288,7 @@ class RabbitMQBackend(TaskBackend):
     async def enqueue(self, task: Task) -> str:
         channel = await self._ensure_channel()
         queue_name = f"morainet.{task.queue}"
-        queue = await channel.declare_queue(queue_name, durable=True)
+        _queue = await channel.declare_queue(queue_name, durable=True)
         import aio_pika
         body = json.dumps(task.to_dict(), ensure_ascii=False).encode()
         await channel.default_exchange.publish(
