@@ -39,12 +39,31 @@ class MockProvider(Provider):
             return response
 
         # Default: echo the most recent user message as the final answer.
-        last_user = next(
-            (m.content for m in reversed(messages) if m.role.value == "user"),
-            "",
+        last_user_msg = next(
+            (m for m in reversed(messages) if m.role.value == "user"),
+            None,
         )
+        if last_user_msg is not None:
+            # Handle both text-only and multimodal content
+            if isinstance(last_user_msg.content, list):
+                # Multimodal — extract text and note image count
+                text_parts: list[str] = []
+                img_count = 0
+                for item in last_user_msg.content:
+                    if item.get("type") == "text":
+                        text_parts.append(item.get("text", ""))
+                    elif item.get("type") in ("image_url", "image", "image_base64"):
+                        img_count += 1
+                text = " ".join(text_parts) or ""
+                img_note = f" [{img_count} image(s)]" if img_count > 0 else ""
+                echo = f"[mock] {text}{img_note}"
+            else:
+                echo = f"[mock] {last_user_msg.content or ''}"
+        else:
+            echo = "[mock]"
+
         return ChatResponse(
-            message=Message.assistant(content=f"[mock] {last_user}"),
+            message=Message.assistant(content=echo),
             usage=Usage(prompt_tokens=1, completion_tokens=1, total_tokens=2),
             model="mock",
             finish_reason="stop",

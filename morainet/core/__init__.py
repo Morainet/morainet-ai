@@ -3,6 +3,7 @@ from morainet.core.context import Context
 from morainet.core.models import (
     AgentResult,
     ChatResponse,
+    Content,
     Message,
     Role,
     Step,
@@ -16,6 +17,7 @@ __all__ = [
     "Context",
     "AgentResult",
     "ChatResponse",
+    "Content",
     "Message",
     "Role",
     "Step",

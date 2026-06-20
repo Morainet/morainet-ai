@@ -130,9 +130,36 @@ class OllamaScheduler:
 
 
 def to_ollama(messages: list[Message]) -> list[dict[str, Any]]:
+    """Convert Morainet Messages to Ollama /api/chat format.
+
+    Handles both text-only and multimodal messages. For multimodal user
+    messages, images are extracted into the ``images`` field (base64 list).
+    """
     converted: list[dict[str, Any]] = []
     for m in messages:
-        msg: dict[str, Any] = {"role": m.role.value, "content": m.content or ""}
+        msg: dict[str, Any] = {"role": m.role.value}
+
+        # Handle multimodal content (images in user messages)
+        if isinstance(m.content, list) and m.role.value == "user":
+            text_parts: list[str] = []
+            images: list[str] = []
+            for item in m.content:
+                if item.get("type") == "text":
+                    text_parts.append(item.get("text", ""))
+                elif item.get("type") in ("image_url", "image"):
+                    img = item.get("image_url", {})
+                    url = img.get("url", "") if isinstance(img, dict) else str(img)
+                    if url.startswith("data:image/"):
+                        _, b64 = url.split(",", 1)
+                        images.append(b64)
+                elif item.get("type") == "image_base64":
+                    images.append(item.get("data", ""))
+            msg["content"] = " ".join(text_parts) if text_parts else ""
+            if images:
+                msg["images"] = images
+        else:
+            msg["content"] = m.content or ""
+
         if m.tool_calls:
             msg["tool_calls"] = [
                 {"function": {"name": tc.name, "arguments": tc.arguments}}

@@ -46,7 +46,13 @@ class OpenAIProvider(Provider):
     def _to_openai_message(self, m: Message) -> dict[str, Any]:
         msg: dict[str, Any] = {"role": m.role.value}
         if m.content is not None:
-            msg["content"] = m.content
+            # Route multimodal content through the unified adapter
+            if isinstance(m.content, list):
+                from morainet.multimodal.provider_adapter import default_adapter
+                converted = default_adapter.to_openai([m])
+                msg["content"] = converted[0]["content"] if converted else ""
+            else:
+                msg["content"] = m.content
         if m.tool_calls:
             msg["tool_calls"] = [
                 {

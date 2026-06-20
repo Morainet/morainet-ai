@@ -27,13 +27,20 @@ from morainet.providers.base import Provider
 
 
 def to_gemini(messages: list[Message]) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    """Convert messages to Gemini GenerateContent format.
+
+    Handles multimodal content: images as inlineData, text as text parts.
+    """
     system_parts: list[str] = []
     contents: list[dict[str, Any]] = []
 
     for m in messages:
         if m.role == Role.SYSTEM:
             if m.content:
-                system_parts.append(m.content)
+                system_parts.append(
+                    m.content if isinstance(m.content, str)
+                    else _extract_text_gemini(m.content)
+                )
         elif m.role == Role.TOOL:
             contents.append(
                 {
@@ -51,16 +58,71 @@ def to_gemini(messages: list[Message]) -> tuple[dict[str, Any] | None, list[dict
         elif m.role == Role.ASSISTANT and m.tool_calls:
             parts: list[dict[str, Any]] = []
             if m.content:
-                parts.append({"text": m.content})
+                parts.append({"text": m.content if isinstance(m.content, str) else _extract_text_gemini(m.content or [])})
             for tc in m.tool_calls:
                 parts.append({"functionCall": {"name": tc.name, "args": tc.arguments}})
             contents.append({"role": "model", "parts": parts})
+        elif isinstance(m.content, list) and m.role == Role.USER:
+            # Multimodal user message — build Gemini parts
+            parts: list[dict[str, Any]] = []
+            for item in m.content:
+                if item.get("type") == "text":
+                    parts.append({"text": item.get("text", "")})
+                elif item.get("type") in ("image_url", "image"):
+                    img = item.get("image_url", {})
+                    url = img.get("url", "") if isinstance(img, dict) else str(img)
+                    if url.startswith("data:"):
+                        header, b64 = url.split(",", 1)
+                        media_type = "image/jpeg"
+                        if ":" in header.split(";")[0]:
+                            media_type = header.split(":")[1].split(";")[0]
+                        parts.append({"inlineData": {"mimeType": media_type, "data": b64}})
+                    else:
+                        parts.append({"fileData": {"fileUri": url}})
+                elif item.get("type") == "image_base64":
+                    parts.append({
+                        "inlineData": {
+                            "mimeType": item.get("media_type", "image/jpeg"),
+                            "data": item.get("data", ""),
+                        },
+                    })
+                elif item.get("type") == "audio":
+                    audio = item.get("audio", {})
+                    parts.append({
+                        "inlineData": {
+                            "mimeType": f"audio/{audio.get('format', 'mp3')}",
+                            "data": audio.get("data", ""),
+                        },
+                    })
+                else:
+                    parts.append({"text": str(item)})
+            contents.append({"role": "user", "parts": parts})
         else:
             role = "model" if m.role == Role.ASSISTANT else "user"
-            contents.append({"role": role, "parts": [{"text": m.content or ""}]})
+            contents.append({
+                "role": role,
+                "parts": [{"text": m.content if isinstance(m.content, str) else _extract_text_gemini(m.content or []) if m.content else ""}],
+            })
 
     system = {"parts": [{"text": "\n\n".join(system_parts)}]} if system_parts else None
     return system, contents
+
+
+def _extract_text_gemini(content: list[dict[str, Any]]) -> str:
+    """Extract concatenated text from content blocks for Gemini."""
+    parts: list[str] = []
+    for item in content:
+        if item.get("type") == "text":
+            parts.append(item.get("text", ""))
+        elif item.get("type") in ("image_url", "image"):
+            parts.append("[Image]")
+        elif item.get("type") == "audio":
+            a = item.get("audio", {})
+            parts.append(a.get("transcript", "[Audio]"))
+        elif item.get("type") == "file":
+            f = item.get("file", {})
+            parts.append(f"[File: {f.get('file_name', 'unknown')}]")
+    return " ".join(parts)
 
 
 def parse_response(data: dict[str, Any], model: str) -> ChatResponse:

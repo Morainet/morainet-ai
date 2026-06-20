@@ -27,14 +27,20 @@ _STOP_REASON_MAP = {"end_turn": "stop", "max_tokens": "length", "tool_use": "too
 
 
 def to_anthropic(messages: list[Message]) -> tuple[str | None, list[dict[str, Any]]]:
-    """Split out the system prompt and convert messages to Anthropic blocks."""
+    """Split out the system prompt and convert messages to Anthropic content blocks.
+
+    For multimodal user messages with images, builds Anthropic image source blocks.
+    """
     system_parts: list[str] = []
     converted: list[dict[str, Any]] = []
 
     for m in messages:
         if m.role == Role.SYSTEM:
             if m.content:
-                system_parts.append(m.content)
+                system_parts.append(
+                    m.content if isinstance(m.content, str)
+                    else _extract_text(m.content)
+                )
         elif m.role == Role.TOOL:
             converted.append(
                 {
@@ -51,17 +57,79 @@ def to_anthropic(messages: list[Message]) -> tuple[str | None, list[dict[str, An
         elif m.role == Role.ASSISTANT and m.tool_calls:
             blocks: list[dict[str, Any]] = []
             if m.content:
-                blocks.append({"type": "text", "text": m.content})
+                blocks.append({"type": "text", "text": m.content if isinstance(m.content, str) else _extract_text(m.content or [])})
             for tc in m.tool_calls:
                 blocks.append(
                     {"type": "tool_use", "id": tc.id, "name": tc.name, "input": tc.arguments}
                 )
             converted.append({"role": "assistant", "content": blocks})
+        elif isinstance(m.content, list) and m.role == Role.USER:
+            # Multimodal user message — build Anthropic content blocks
+            blocks: list[dict[str, Any]] = []
+            for item in m.content:
+                if item.get("type") == "text":
+                    blocks.append({"type": "text", "text": item.get("text", "")})
+                elif item.get("type") in ("image_url", "image"):
+                    img = item.get("image_url", {})
+                    url = img.get("url", "") if isinstance(img, dict) else str(img)
+                    if url.startswith("data:"):
+                        header, b64 = url.split(",", 1)
+                        media_type = "image/jpeg"
+                        if ":" in header.split(";")[0]:
+                            media_type = header.split(":")[1].split(";")[0]
+                        blocks.append({
+                            "type": "image",
+                            "source": {"type": "base64", "media_type": media_type, "data": b64},
+                        })
+                    else:
+                        blocks.append({
+                            "type": "image",
+                            "source": {"type": "url", "url": url},
+                        })
+                elif item.get("type") == "image_base64":
+                    blocks.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": item.get("media_type", "image/jpeg"),
+                            "data": item.get("data", ""),
+                        },
+                    })
+                elif item.get("type") == "audio":
+                    audio = item.get("audio", {})
+                    transcript = audio.get("transcript", "")
+                    if transcript:
+                        blocks.append({"type": "text", "text": f"[Audio transcript]: {transcript}"})
+                    else:
+                        blocks.append({"type": "text", "text": f"[Audio: {audio.get('format', 'unknown')}]"})
+                else:
+                    blocks.append({"type": "text", "text": str(item)})
+            converted.append({"role": "user", "content": blocks})
         else:
-            converted.append({"role": m.role.value, "content": m.content or ""})
+            converted.append({
+                "role": m.role.value,
+                "content": m.content if isinstance(m.content, str) else _extract_text(m.content or []) if m.content else "",
+            })
 
     system = "\n\n".join(system_parts) if system_parts else None
     return system, converted
+
+
+def _extract_text(content: list[dict[str, Any]]) -> str:
+    """Extract concatenated text from a content block list."""
+    parts: list[str] = []
+    for item in content:
+        if item.get("type") == "text":
+            parts.append(item.get("text", ""))
+        elif item.get("type") in ("image_url", "image"):
+            parts.append("[Image]")
+        elif item.get("type") == "audio":
+            a = item.get("audio", {})
+            parts.append(a.get("transcript", "[Audio]"))
+        elif item.get("type") == "file":
+            f = item.get("file", {})
+            parts.append(f"[File: {f.get('file_name', 'unknown')}]")
+    return " ".join(parts)
 
 
 def parse_response(data: dict[str, Any], model: str) -> ChatResponse:

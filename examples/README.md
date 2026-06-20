@@ -47,5 +47,12 @@ python examples/multi_agent.py
 MORAINET_OLLAMA_MODEL=qwen2.5:3b python examples/coding_assistant.py
 ```
 
+## 多模态
+
+| 场景 | 示例 | 涉及能力 |
+| --- | --- | --- |
+| 多模态基础 | `multimodal_basic.py` | ContentPart 类型 + Message 构建器 + 多模态工具注册 + Provider 适配器路由 |
+| 多模态 RAG | `multimodal_rag.py` | MultimodalDocument + ImageCaptioner + MultimodalRAG + VisionReasoningChain + Agent 集成 |
+
 > macOS + Homebrew Python：命令行需 `export DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib`
 > （编辑器 F5 已在 `.vscode` 配好）。

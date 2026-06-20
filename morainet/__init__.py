@@ -1,6 +1,6 @@
 """Morainet AI — a lightweight, extensible AI Agent Runtime Framework."""
 
-from morainet.core import Agent, AgentResult, Message, Usage
+from morainet.core import Agent, AgentResult, Content, Message, Usage
 from morainet.debug import Debugger
 from morainet.engineering import (
     BillingStats,
@@ -39,6 +39,41 @@ from morainet.multiagent import (
     Router,
     Stage,
     TeamResult,
+)
+from morainet.multimodal import (
+    AudioPart,
+    ContentPart,
+    ContentType,
+    FilePart,
+    ImageAnalysisResult,
+    ImageBase64Part,
+    ImageCaptioner,
+    ImageTextEncoder,
+    ImageUrlPart,
+    MultimodalAdapter,
+    MultimodalDocument,
+    MultimodalRAG,
+    MultimodalRetriever,
+    SimpleImageCaptioner,
+    SimpleImageTextEncoder,
+    TextPart,
+    VisionReasoningChain,
+    chart_parse,
+    content_has_images,
+    content_has_text,
+    content_to_openai_blocks,
+    content_to_str,
+    default_adapter,
+    describe_image,
+    get_adapter,
+    image_understand,
+    ocr,
+    parse_multimodal_content,
+    register_adapter,
+    sanitize_content,
+    source_to_part,
+    speech_to_text,
+    split_text_and_images,
 )
 from morainet.observability.hooks import Hook
 from morainet.observability.trace import TraceCollector
@@ -138,6 +173,7 @@ __version__ = "1.0.0"
 __all__ = [
     "Agent",
     "AgentResult",
+    "Content",
     "Message",
     "Usage",
     "Tool",
@@ -275,5 +311,42 @@ __all__ = [
     "Stage",
     "Route",
     "TeamResult",
+    # Multimodal — content
+    "ContentType",
+    "ContentPart",
+    "TextPart",
+    "ImageUrlPart",
+    "ImageBase64Part",
+    "AudioPart",
+    "FilePart",
+    "content_to_str",
+    "content_has_text",
+    "content_has_images",
+    "split_text_and_images",
+    "content_to_openai_blocks",
+    "parse_multimodal_content",
+    "sanitize_content",
+    "source_to_part",
+    # Multimodal — tools
+    "image_understand",
+    "describe_image",
+    "ocr",
+    "chart_parse",
+    "speech_to_text",
+    "ImageAnalysisResult",
+    # Multimodal — RAG
+    "MultimodalDocument",
+    "ImageCaptioner",
+    "ImageTextEncoder",
+    "MultimodalRetriever",
+    "MultimodalRAG",
+    "VisionReasoningChain",
+    "SimpleImageCaptioner",
+    "SimpleImageTextEncoder",
+    # Multimodal — adapters
+    "MultimodalAdapter",
+    "default_adapter",
+    "get_adapter",
+    "register_adapter",
     "__version__",
 ]
