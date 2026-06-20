@@ -57,6 +57,35 @@ BUILTIN_TEMPLATES: dict[str, PromptTemplate] = {
         name="summarizer",
         template="Summarize the following conversation concisely:\n{history}",
     ),
+    "context_compressor": PromptTemplate(
+        name="context_compressor",
+        template=(
+            "You are a context compressor. Extract the key facts, decisions, and "
+            "important context from this conversation. List each fact as a bullet point. "
+            "Exclude greetings, small talk, and redundant rephrasing. "
+            "Focus on what would be needed to resume the task later.\n\n"
+            "Conversation:\n{history}\n\nKey facts:"
+        ),
+    ),
+    "failure_reflector": PromptTemplate(
+        name="failure_reflector",
+        template=(
+            "A tool call failed. Analyze why and suggest a fix.\n\n"
+            "Tool: {tool_name}\nArguments: {arguments}\nError: {error}\n\n"
+            "Recent context:\n{context}\n\nBrief reflection (1-2 sentences):"
+        ),
+    ),
+    "self_verifier": PromptTemplate(
+        name="self_verifier",
+        template=(
+            "Before giving a final answer, verify:\n"
+            "1. Does this directly answer the user's original question?\n"
+            "2. Are the tool results consistent with the answer?\n"
+            "3. Is anything missing or incomplete?\n\n"
+            "User's query: {query}\nYour proposed answer: {draft}\n\n"
+            "Reply 'OK' if satisfied, or explain what needs fixing."
+        ),
+    ),
 }
 
 

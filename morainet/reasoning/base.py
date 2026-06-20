@@ -17,6 +17,7 @@ from morainet.tools import ToolRegistry
 
 if TYPE_CHECKING:
     from morainet.core.agent import Agent
+    from morainet.reasoning.tool_cache import ToolCache
 
 # Decides whether a dangerous tool call may run: (name, arguments) -> bool.
 ApproveCallback = Callable[[str, dict[str, Any]], "bool | Awaitable[bool]"]
@@ -92,15 +93,43 @@ async def run_tool_calls(
     tool_calls: list[ToolCall],
     hooks: HookManager | None = None,
     approve: ApproveCallback | None = None,
+    cache: "ToolCache | None" = None,
 ) -> None:
-    """Execute native tool calls, recording a Step and a tool Message for each."""
+    """Execute native tool calls, recording a Step and a tool Message for each.
+
+    If ``cache`` is provided, tool results are checked against it before execution
+    and stored after successful execution, avoiding redundant API calls.
+    """
     for call in tool_calls:
+        # Check cache
+        if cache is not None:
+            cached = cache.get(call.name, call.arguments)
+            if cached is not None:
+                cached_result, cached_error = cached
+                if cached_error is None:
+                    step = Step(
+                        index=len(ctx.steps),
+                        description=f"{call.name} [cached]",
+                        status=StepStatus.SUCCESS,
+                        output=cached_result,
+                    )
+                    ctx.add_step(step)
+                    ctx.add_message(
+                        Message.tool(content=stringify(cached_result), tool_call_id=call.id)
+                    )
+                    if hooks is not None:
+                        await hooks.tool_end(ctx, step)
+                    continue
+
         step = Step(index=len(ctx.steps), description=call.name, status=StepStatus.RUNNING)
         result, error = await execute_tool(registry, call.name, call.arguments, approve)
         if error is None:
             step.output = result
             step.status = StepStatus.SUCCESS
             content = stringify(result)
+            # Cache successful result
+            if cache is not None:
+                cache.set(call.name, call.arguments, result=result)
         else:
             step.error = error
             step.status = StepStatus.FAILED

@@ -25,6 +25,7 @@ from morainet.reasoning.base import (
     make_result,
     run_tool_calls,
 )
+from morainet.reasoning.tool_cache import ToolCache
 from morainet.reasoning.tool_calling import ToolCallingStrategy
 from morainet.tools import Tool, ToolRegistry
 
@@ -47,6 +48,7 @@ class Agent:
         approve_tool: ApproveCallback | None = None,
         system_prompt: str | None = None,
         prompts: dict[str, PromptTemplate | str] | None = None,
+        tool_cache: ToolCache | None = None,
     ) -> None:
         self.provider = RetryingProvider(provider, retry) if retry is not None else provider
         self.registry = ToolRegistry(tools)
@@ -58,6 +60,7 @@ class Agent:
         self.approve_tool = approve_tool
         self.system_prompt = system_prompt
         self.prompts = PromptRegistry(prompts)
+        self.tool_cache = tool_cache
 
         self.checkpoint_store = checkpoint_store
         all_hooks = list(hooks or [])
@@ -144,7 +147,8 @@ class Agent:
                 return
 
             await run_tool_calls(
-                self.registry, ctx, response.message.tool_calls, self.hooks, self.approve_tool
+                self.registry, ctx, response.message.tool_calls,
+                self.hooks, self.approve_tool, self.tool_cache,
             )
             enforce_consecutive_errors(self.max_consecutive_errors, ctx)
 

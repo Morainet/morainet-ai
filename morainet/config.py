@@ -41,5 +41,14 @@ class Settings(BaseSettings):
     default_document_ttl: float = 0.0       # seconds, 0 = never expire
     knowledge_base_path: str = ""           # catalogue directory for KnowledgeBase
 
+    # -- reasoning -------------------------------------------------------
+    compress_after_messages: int = 30       # trigger context compression beyond this many msgs
+    max_decomposition_depth: int = 3        # max depth for recursive task decomposition
+    self_verify: bool = True                # verify answer before returning it
+    tool_cache_ttl: float = 300.0           # seconds, 0 = never expire
+    tool_cache_max_size: int = 1000         # max cached entries
+    tool_cache_path: str = ""               # disk path for cache persistence
+    max_reflect_rounds: int = 3             # Plan-Solve-Reflect max replan cycles
+
 
 settings = Settings()

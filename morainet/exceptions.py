@@ -76,6 +76,18 @@ class MaxConsecutiveErrorsError(ReasoningError):
     """Too many consecutive tool failures; the run was aborted."""
 
 
+class PlanError(ReasoningError):
+    """Planning phase failed — could not decompose task into actionable steps."""
+
+
+class ReflectionError(ReasoningError):
+    """Reflection phase failed — could not evaluate progress."""
+
+
+class VerificationError(ReasoningError):
+    """Self-verification detected an issue with the answer."""
+
+
 # --- Memory errors ---------------------------------------------------------
 
 

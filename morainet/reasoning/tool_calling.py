@@ -38,7 +38,8 @@ class ToolCallingStrategy(ReasoningStrategy):
                 return make_result(ctx, response.message.content or "")
 
             await run_tool_calls(
-                agent.registry, ctx, response.message.tool_calls, agent.hooks, agent.approve_tool
+                agent.registry, ctx, response.message.tool_calls,
+                agent.hooks, agent.approve_tool, agent.tool_cache,
             )
             enforce_consecutive_errors(agent.max_consecutive_errors, ctx)
 

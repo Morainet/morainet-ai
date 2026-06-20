@@ -42,7 +42,15 @@ from morainet.persistence import (
 from morainet.plugins import PluginRegistry, plugins
 from morainet.prompts import PromptTemplate
 from morainet.providers import RetryingProvider, RetryPolicy
-from morainet.reasoning import ReActStrategy, ReasoningStrategy, ToolCallingStrategy
+from morainet.reasoning import (
+    ContextCompressor,
+    EnhancedReActStrategy,
+    PlanSolveReflectStrategy,
+    ReActStrategy,
+    ReasoningStrategy,
+    ToolCache,
+    ToolCallingStrategy,
+)
 from morainet.tools import Tool, tool
 from morainet.workflow import Workflow
 
@@ -80,6 +88,10 @@ __all__ = [
     "ReasoningStrategy",
     "ToolCallingStrategy",
     "ReActStrategy",
+    "EnhancedReActStrategy",
+    "PlanSolveReflectStrategy",
+    "ContextCompressor",
+    "ToolCache",
     "Hook",
     "TraceCollector",
     "Debugger",
