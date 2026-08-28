@@ -162,7 +162,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Morainet Agent Service",
     description="Lightweight AI Agent Runtime API",
-    version="1.0.0",
+    version="1.4.0",
     lifespan=lifespan,
 )
 

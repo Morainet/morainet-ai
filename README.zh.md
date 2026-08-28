@@ -51,17 +51,23 @@ Morainet AI 是一套 **Agent 运行时内核**：用统一的接口驱动任意
 ## 核心特性
 
 - **Tool Calling** —— `@tool` 装饰器从类型注解 + docstring 自动生成 JSON Schema，自动校验参数
-- **多 Provider** —— OpenAI / Claude / Gemini / Ollama / DeepSeek，内置 `MockProvider` 离线可跑
-- **可插拔推理策略** —— `ToolCallingStrategy`（默认，原生函数调用）/ `ReActStrategy`（文本式 Reason+Act），可自定义
+- **多 Provider** —— OpenAI / Claude / Gemini / Ollama / DeepSeek / Qwen / 文心 / 智谱 / Moonshot / MiniMax / SiliconFlow + OpenAI 兼容，内置 `MockProvider` 离线可跑
+- **模型路由** —— `ModelRouter` / `OllamaScheduler` 智能路由 + `multi_model_query` 多模型对比，`estimate_complexity` 按成本调度
+- **可插拔推理策略** —— `ToolCallingStrategy`（默认，原生函数调用）/ `ReActStrategy` / `EnhancedReActStrategy` / `PlanSolveReflectStrategy`，内置 `ContextCompressor` 循环内压缩与 `ToolCache` 结果缓存
 - **流式输出** —— `agent.astream()`，OpenAI(SSE) / Ollama(NDJSON) / Claude(SSE) / Gemini(SSE) 真流式
-- **记忆系统** —— `ShortMemory`（窗口 / token 预算）· `LongMemory`（向量检索 RAG）· `SummarizingMemory`（自动摘要压缩）
-- **多 Agent 编排** —— A2A 原生协议（无需中转工具）· 辩论 / 评审 / 分层委托 / 共享记忆池 · 动态 Agent 生成与生命周期 · 资源与权限隔离 · Agent 池化复用
+- **记忆系统** —— `ShortMemory`（窗口 / token 预算）· `LongMemory`（向量检索 RAG）· `SummarizingMemory`（自动摘要压缩）· `HierarchicalMemory` 分层记忆 · `TemporalMemory` 时间感知 · `FactStore` 事实库 · `TaskGoalStore` 目标库 · `UserPreferencesStore` 偏好库 · `RAGPipeline` / `KnowledgeBase`
+- **向量库** —— InMemory / Chroma / Qdrant / pgvector / Faiss / Milvus 六种后端，支持混合检索 + 重排
+- **多 Agent 编排** —— A2A 原生协议（无需中转工具）· 辩论 / 评审 / 分层委托 / 共享记忆池 · 动态 Agent 生成与生命周期 · 资源与权限隔离 · Agent 池化复用 · 群聊
 - **Workflow 引擎** —— DAG 编排，环检测 + 拓扑分层并行执行，可导出 Mermaid / DOT
 - **Prompt 管理** —— 版本化模板、安全渲染（防注入）、可覆盖
-- **可观测性** —— Hook 事件系统 + `TraceCollector` 结构化轨迹 + `Debugger` 时间线 + OpenTelemetry 导出
-- **状态持久化** —— `Checkpoint`（内存 / 文件 / SQLite），支持断点恢复 `agent.resume()`
-- **生产化** —— 指数退避重试 · token 预算 · 连续失败中止 · 危险工具人工审批
-- **扩展机制** —— Plugin（entry points 动态发现）· MCP 集成（工具 / 资源 / 提示）
+- **可观测性** —— Hook 事件系统 + `TraceCollector` 结构化轨迹 + `Debugger` 时间线 + OpenTelemetry 导出 + 分布式轨迹
+- **状态持久化** —— `Checkpoint`（内存 / 文件 / SQLite / Redis / PostgreSQL），支持断点恢复 `agent.resume()`
+- **生产化** —— 指数退避重试（含按错误分类的 `CategorizedRetryingProvider`）· token 预算 · 连续失败中止 · 危险工具人工审批 · `PermissionEnforcer` 权限强制 / `ApprovalFlow` 审批流 / `AuditLogger` 审计
+- **工程治理** —— `TokenBucketRateLimiter` / `SlidingWindowRateLimiter` 限流 · `ConcurrencyLimiter` 并发控制 · `BillingTracker` 成本核算 · `CircuitBreaker` 熔断
+- **扩展机制** —— Plugin（entry points 动态发现 + 市场）· MCP 集成（工具 / 资源 / 提示，含连接池 + 缓存）
+- **多模态** —— 图片 / 音频 / 文件内容部件，图像理解 / OCR / 图表解析 / 语音转文字工具，多模态 RAG（`MultimodalRAG` / `VisionReasoningChain`），可插拔 Provider 适配器
+- **分布式** —— 任务队列（Redis / RabbitMQ 后端）· DAG 分布式调度 · Agent 集群与一致性哈希分片 · 负载均衡（轮询 / 加权 / 混合路由）· 云边协同 · 分布式 Checkpoint
+- **调试工具** —— 本地调试面板（`morainet-debug`）+ Mermaid 导出（HTML / SVG / PNG）+ CLI（`morainet chat`）
 
 ---
 
@@ -90,7 +96,7 @@ flowchart TD
 
 **一次 `agent.run()` 的流程**：准备上下文（系统提示 + 记忆注入）→ 推理策略循环（调模型 → 执行工具 → 回灌结果，直到收敛）→ 触发 Hook（追踪 / 快照）→ 持久化记忆 → 返回 `AgentResult`（含最终答案、步骤轨迹、token 用量、trace_id）。
 
-> 完整设计见 [`docs/architecture.md`](docs/architecture.md)，实现说明与差异见 [`docs/architecture-v1.3.md`](docs/architecture-v1.3.md)。
+> 完整设计见 [`docs/architecture.md`](docs/architecture.md)，实现说明与差异见 [`docs/architecture-v1.4.md`](docs/architecture-v1.4.md)。
 
 ---
 
@@ -99,18 +105,21 @@ flowchart TD
 | 模块 | 职责 |
 | --- | --- |
 | `core/` | `Agent`、`Context`、统一数据模型（Message / ToolCall / Step / AgentResult） |
-| `reasoning/` | `ReasoningStrategy` 抽象 + `ToolCallingStrategy`（默认）/ `ReActStrategy` |
-| `tools/` | `@tool` 装饰器、`ToolRegistry`、类型注解 → JSON Schema、`Tool.from_schema` |
-| `providers/` | Provider 抽象与各家实现、`RetryingProvider`、SSE/NDJSON 流式解析 |
-| `memory/` | Memory / Embedder / VectorStore 抽象与实现（Hash/Ollama/OpenAI、InMemory/Chroma） |
-| `workflow/` | `Workflow` DAG、分层并行执行器、Mermaid/DOT 导出 |
+| `reasoning/` | `ReasoningStrategy` 抽象 + `ToolCallingStrategy`（默认）/ `ReActStrategy` / `EnhancedReActStrategy` / `PlanSolveReflectStrategy` · `ContextCompressor` · `ToolCache` |
+| `tools/` | `@tool` 装饰器、`ToolRegistry`、类型注解 → JSON Schema、`Tool.from_schema`、权限 / 审批 / 审计 |
+| `providers/` | Provider 抽象与 13 家实现、`RetryingProvider`、`ModelRouter`、SSE/NDJSON 流式解析 |
+| `memory/` | Memory / Embedder / VectorStore 抽象与实现（6 种后端），RAG / KnowledgeBase / 事实与目标库 |
+| `workflow/` | `Workflow` DAG、分层并行执行器、Mermaid/DOT 导出、可插拔调度器 |
 | `prompts/` | `PromptTemplate` / `PromptRegistry` / 内置模板 |
-| `persistence/` | `Checkpoint`、内存/文件/SQLite Store、`CheckpointHook` |
-| `observability/` | `Hook` / `HookManager`、`TraceCollector`、`OTelHook` |
-| `mcp/` | `MCPClient`、`stdio_session`、MCP 工具/资源/提示转换 |
-| `multiagent/` | A2A 协议 · 辩论/评审/分层委托/共享记忆池拓扑 · `TeamOrchestrator` · `AgentFactory` 动态生成 · `AgentPool` · `AgentSandbox` 隔离 |
-| `plugins.py` | entry points 插件注册表 |
-| `config.py` · `exceptions.py` · `tokens.py` · `debug.py` | 配置、异常体系、token 估算、Debugger |
+| `persistence/` | `Checkpoint`、内存/文件/SQLite/Redis/PostgreSQL Store、`CheckpointHook` |
+| `observability/` | `Hook` / `HookManager`、`TraceCollector`、`DistributedRunTrace`、`OTelHook` |
+| `mcp/` | `MCPClient`、`stdio_session`、MCP 工具/资源/提示转换、连接池 + 缓存 |
+| `multiagent/` | A2A 协议 · 辩论/评审/分层委托/共享记忆池拓扑 · 群聊 · `TeamOrchestrator` · `AgentFactory` 动态生成 · `AgentPool` · `AgentSandbox` 隔离 |
+| `multimodal/` | 图片/音频/文件内容部件，视觉/OCR/图表/语音工具，多模态 RAG，Provider 适配器 |
+| `distributed/` | 任务队列 · DAG 分布式调度 · Agent 集群与分片 · 负载均衡 · 分布式 Checkpoint |
+| `engineering/` | 限流 · 并发控制 · 计费统计 · 熔断 |
+| `cli/` · `debug_panel/` | `morainet chat` CLI · 本地调试面板（Mermaid 导出） |
+| `plugins.py` | entry points 插件注册表 + 市场 |
 
 ---
 
@@ -125,11 +134,25 @@ flowchart TD
 
 ## 安装
 
+稳定版（需 Python 3.11+）：
+
 ```bash
-pip install -e ".[dev]"     # 需 Python 3.11+
+pip install morainet-ai
 ```
 
-可选依赖：`".[chroma]"`（ChromaDB 向量库）、`".[mcp]"`（MCP 客户端）、`".[otel]"`（OpenTelemetry）。
+预发布版（alpha / beta / rc）：
+
+```bash
+pip install --pre morainet-ai
+```
+
+开发安装（从源码）：
+
+```bash
+pip install -e ".[dev]"
+```
+
+可选依赖：`".[chroma]"`（ChromaDB 向量库）、`".[qdrant]"` / `".[pgvector]"` / `".[faiss]"` / `".[milvus]"`（其他向量库）、`".[mcp]"`（MCP 客户端）、`".[otel]"`（OpenTelemetry）、`".[redis]"` / `".[postgres]"`（分布式/持久化后端）、`".[rag]"`（完整 RAG 栈）。
 
 ---
 
@@ -195,20 +218,21 @@ python examples/multiagent_collaboration_demo.py  # 进阶：A2A 协议 / 辩论
 
 ```bash
 pytest                     # 离线单测（不需 key，MockProvider）
-pytest --cov=morainet      # 覆盖率（门禁 80%）
+pytest --cov=morainet      # 覆盖率（门禁在 CI 中强制执行）
 pytest -m live             # 真实端点联调（设好凭证；无凭证自动跳过）
 ruff check morainet tests  # lint
 mypy morainet              # 严格类型检查
 ```
 
-GitHub Actions 在 Python 3.11 / 3.12 上运行上述检查。
+GitHub Actions 在 Python 3.11 / 3.12 上运行上述检查。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ---
 
 ## 文档
 
 - **架构设计**：[`docs/architecture.md`](docs/architecture.md)
-- **实现说明与路线**：[`docs/architecture-v1.3.md`](docs/architecture-v1.3.md)
+- **实现说明与路线**：[`docs/architecture-v1.4.md`](docs/architecture-v1.4.md)
+- **更新日志**：[`CHANGELOG.md`](CHANGELOG.md)
 - **分步教程**：[GitHub Wiki](../../wiki)
 - **贡献指南**：[`CONTRIBUTING.md`](CONTRIBUTING.md)
 
@@ -218,7 +242,15 @@ GitHub Actions 在 Python 3.11 / 3.12 上运行上述检查。
 
 已发布 **v1.0**：Agent Core · 多 Provider · 流式 · 记忆(RAG/摘要) · 多 Agent（A2A · 辩论/评审/委托/池 · 沙箱）· Workflow · Prompt · 可观测(Hook/Trace/Debugger/OTel) · Checkpoint(含 SQLite) · 生产化(重试/预算/审批) · Plugin · MCP。
 
-后续方向：真实端点联调全绿 · 更多向量库后端（Qdrant/pgvector）· 上下文压缩进推理循环。
+**v1.1 – v1.3**（代码已落地）：更多向量库后端（Qdrant / pgvector / Faiss / Milvus）· 上下文压缩进推理循环（`ContextCompressor`）· 工具安全（`PermissionEnforcer` / `ApprovalFlow` / `AuditLogger`）· 工程治理（限流 / 并发 / 计费 / 熔断）· 模型路由（`ModelRouter` / `OllamaScheduler`）。
+
+**v1.4**（当前，代码完整）：多模态（图片/音频内容 · 视觉/OCR/图表/语音工具 · 多模态 RAG）· 分布式（任务队列 · DAG 调度 · 集群与分片 · 负载均衡 · 分布式 Checkpoint）· Redis/PostgreSQL Checkpoint Store · CLI + 本地调试面板。
+
+后续方向（详见 [`docs/architecture-v1.4.md`](docs/architecture-v1.4.md)）：
+- 覆盖率门禁回升到 70%+（新模块补测）
+- 真实 key 跑通全部 `pytest -m live` 端点
+- 分布式模块生产加固（队列持久化/重试、集群故障转移场景）
+- 按能力域重构 docs/wiki
 
 ---
 

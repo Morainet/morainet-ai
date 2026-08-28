@@ -356,7 +356,7 @@ async def lifespan(app: FastAPI):
 
 
 # ---------- API ----------
-app = FastAPI(title="Morainet Agent Service", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Morainet Agent Service", version="1.4.0", lifespan=lifespan)
 
 
 class QueryRequest(BaseModel):

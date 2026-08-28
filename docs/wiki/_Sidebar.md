@@ -2,6 +2,8 @@
 
 - [首页](Home)
 - [入门教程](Getting-Started)
+- [多模态](Multimodal)
+- [分布式](Distributed)
 
 **章节速览**
 - [安装与准备](Getting-Started#0-准备)

@@ -244,7 +244,7 @@ from morainet.workflow import (
     scheduler_registry,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.4.0"
 
 __all__ = [
     "Agent",

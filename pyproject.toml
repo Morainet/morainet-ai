@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "morainet-ai"
-version = "1.0.0"
+version = "1.4.0"
 description = "A lightweight, extensible, embeddable AI Agent Runtime Framework"
 readme = "README.md"
 requires-python = ">=3.11"

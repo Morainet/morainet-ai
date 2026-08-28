@@ -12,15 +12,21 @@
 ## 能做什么
 
 - **Tool Calling** —— `@tool` 自动生成 JSON Schema
-- **多 Provider** —— OpenAI / Claude / Gemini / Ollama / DeepSeek（内置 Mock 离线可跑）
-- **可插拔推理** —— ToolCalling（默认）/ ReAct
+- **多 Provider** —— OpenAI / Claude / Gemini / Ollama / DeepSeek / Qwen / 文心 / 智谱 / Moonshot / MiniMax / SiliconFlow（内置 Mock 离线可跑）
+- **模型路由** —— `ModelRouter` / `OllamaScheduler` / 多模型对比查询
+- **可插拔推理** —— ToolCalling（默认）/ ReAct / EnhancedReAct / Plan-Solve-Reflect + 上下文压缩
 - **流式输出** —— `agent.astream()`
-- **记忆** —— 短期窗口 / 长期向量检索（RAG）/ 自动摘要
-- **多 Agent** —— A2A 原生协议 · 辩论/评审/分层委托/共享记忆池 · 动态生成 · 资源隔离 · 池化
+- **记忆** —— 短期窗口 / 长期向量检索（RAG）/ 自动摘要 / 分层记忆 / 时间感知
+- **向量库** —— InMemory / Chroma / Qdrant / pgvector / Faiss / Milvus
+- **多 Agent** —— A2A 原生协议 · 辩论/评审/分层委托/共享记忆池/群聊 · 动态生成 · 资源隔离 · 池化
 - **Workflow** —— DAG 编排 + 可视化
-- **可观测 / 持久化** —— Hook · Tracing · Debugger · Checkpoint
-- **生产化** —— 重试 / token 预算 / 危险工具审批
-- **扩展** —— Plugin（entry points）· MCP 集成
+- **可观测 / 持久化** —— Hook · Tracing · Debugger · Checkpoint（含 Redis / PostgreSQL）
+- **生产化** —— 重试 / token 预算 / 危险工具审批 / 权限强制 / 审计
+- **工程治理** —— 限流 / 并发控制 / 计费 / 熔断
+- **多模态** —— 图片理解 / OCR / 图表解析 / 语音转写 / 多模态 RAG
+- **分布式** —— 任务队列 / DAG 分布式调度 / Agent 集群与分片 / 负载均衡
+- **扩展** —— Plugin（entry points + 市场）· MCP 集成（连接池 + 缓存）
+- **调试** —— `morainet chat` CLI · 本地调试面板 · Mermaid 导出
 
 ## 参考方向（examples/）
 
@@ -31,12 +37,16 @@
 | 编码助手（harness） | `coding_assistant.py` |
 | 多 Agent | `multi_agent.py` |
 | 多 Agent 高阶编排 | `multiagent_collaboration_demo.py` |
+| 多模态 | `multimodal_basic.py` · `multimodal_rag.py` |
+| 分布式 | `distributed_cluster.py` · `distributed_workflow.py` |
+| 企业级 | `enterprise/`（部署 / 计费 / 监控） |
 | 本地 / 流式对话 | `live_ollama.py` · `chat.py` |
 
 ## 其他文档
 
 - 架构设计：`docs/architecture.md`
-- 实现说明与路线：`docs/architecture-v1.3.md`
+- 实现说明与路线：`docs/architecture-v1.4.md`
+- 更新日志：`CHANGELOG.md`
 - 贡献指南：`CONTRIBUTING.md`
 
 > 本 Wiki 收录使用教程；设计文档放在仓库 `docs/` 下。

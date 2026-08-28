@@ -20,3 +20,7 @@ venv/
 
 # Local vector store / data
 .morainet_db/
+
+# IDE / coverage artifacts
+.codebuddy/
+.coverage

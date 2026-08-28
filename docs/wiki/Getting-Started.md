@@ -377,7 +377,7 @@ print(wf.to_mermaid())        # 导出流程图
 ## 下一步
 
 - 浏览 `examples/`：RAG、编码助手、多 Agent、调试等可运行示例。
-- 架构与设计：`docs/architecture.md`、`docs/architecture-v1.3.md`。
+- 架构与设计：`docs/architecture.md`、`docs/architecture-v1.4.md`。
 - 自定义扩展（Provider / Tool / Memory / Strategy / Hook）：见 `CONTRIBUTING.md`。
 
 遇到问题欢迎提 Issue。

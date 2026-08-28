@@ -23,7 +23,7 @@ Requires Python 3.11+.
 ```bash
 ruff check morainet tests     # lint
 mypy morainet                 # strict type check
-pytest --cov=morainet         # tests + coverage gate (>= 80%)
+pytest --cov=morainet         # tests + coverage gate (see `fail_under` in pyproject.toml)
 ```
 
 All three must pass before a PR is merged. CI runs them on Python 3.11 and 3.12.

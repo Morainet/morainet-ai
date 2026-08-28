@@ -7,6 +7,8 @@ on:
 
 jobs:
   build:
+    # 跳过预发布 Release（由 publish-pre-release.yml 处理）
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

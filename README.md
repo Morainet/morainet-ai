@@ -51,17 +51,23 @@ Compared to peers: it does **not** compete with model products like ChatGPT/Clau
 ## Key Features
 
 - **Tool Calling** — `@tool` decorator auto-generates JSON Schema from type annotations + docstrings, with automatic parameter validation
-- **Multi-Provider** — OpenAI / Claude / Gemini / Ollama / DeepSeek; built-in `MockProvider` for offline development
-- **Pluggable Reasoning Strategy** — `ToolCallingStrategy` (default, native function calling) / `ReActStrategy` (text-based Reason+Act), fully customizable
+- **Multi-Provider** — OpenAI / Claude / Gemini / Ollama / DeepSeek / Qwen / Wenxin / Zhipu / Moonshot / MiniMax / SiliconFlow + OpenAI-compatible; built-in `MockProvider` for offline development
+- **Model Routing** — `ModelRouter` / `OllamaScheduler` smart routing + `multi_model_query` ensemble; `estimate_complexity` cost-aware dispatch
+- **Pluggable Reasoning Strategy** — `ToolCallingStrategy` (default, native function calling) / `ReActStrategy` / `EnhancedReActStrategy` / `PlanSolveReflectStrategy`, with `ContextCompressor` in-loop compression and `ToolCache` result caching
 - **Streaming Output** — `agent.astream()`, true streaming for OpenAI (SSE) / Ollama (NDJSON) / Claude (SSE) / Gemini (SSE)
-- **Memory System** — `ShortMemory` (window / token budget) · `LongMemory` (vector-retrieval RAG) · `SummarizingMemory` (auto-summarization compression)
-- **Multi-Agent Orchestration** — A2A native protocol (no intermediary tools) · debate / review / hierarchical delegation / shared memory pool · dynamic agent spawn & lifecycle · resource & permission isolation · agent pooling
+- **Memory System** — `ShortMemory` (window / token budget) · `LongMemory` (vector-retrieval RAG) · `SummarizingMemory` (auto-summarization compression) · `HierarchicalMemory` · `TemporalMemory` · `FactStore` · `TaskGoalStore` · `UserPreferencesStore` · `RAGPipeline` / `KnowledgeBase`
+- **Vector Stores** — InMemory / Chroma / Qdrant / pgvector / Faiss / Milvus, with hybrid retrieval + reranking
+- **Multi-Agent Orchestration** — A2A native protocol (no intermediary tools) · debate / review / hierarchical delegation / shared memory pool · dynamic agent spawn & lifecycle · resource & permission isolation · agent pooling · group chat
 - **Workflow Engine** — DAG orchestration, cycle detection + topological level parallel execution, exportable as Mermaid / DOT
 - **Prompt Management** — Versioned templates, safe rendering (injection-proof), overridable
-- **Observability** — Hook event system + `TraceCollector` structured traces + `Debugger` timeline + OpenTelemetry export
-- **State Persistence** — `Checkpoint` (in-memory / file / SQLite), supports resumption via `agent.resume()`
-- **Production Hardening** — Exponential backoff retry · token budget · consecutive-failure abort · dangerous-tool human approval
-- **Extension Mechanism** — Plugin (entry points dynamic discovery) · MCP integration (tools / resources / prompts)
+- **Observability** — Hook event system + `TraceCollector` structured traces + `Debugger` timeline + OpenTelemetry export + distributed trace
+- **State Persistence** — `Checkpoint` (in-memory / file / SQLite / Redis / PostgreSQL), supports resumption via `agent.resume()`
+- **Production Hardening** — Exponential backoff retry (incl. error-category-based `CategorizedRetryingProvider`) · token budget · consecutive-failure abort · dangerous-tool human approval · `PermissionEnforcer` / `ApprovalFlow` / `AuditLogger`
+- **Engineering Controls** — `TokenBucketRateLimiter` / `SlidingWindowRateLimiter` rate limiting · `ConcurrencyLimiter` · `BillingTracker` cost accounting · `CircuitBreaker`
+- **Extension Mechanism** — Plugin (entry points dynamic discovery + marketplace) · MCP integration (tools / resources / prompts, pool + cache)
+- **Multimodal** — image / audio / file content parts, image understanding / OCR / chart parsing / speech-to-text tools, multimodal RAG (`MultimodalRAG` / `VisionReasoningChain`), pluggable provider adapters
+- **Distributed** — task queue (Redis / RabbitMQ backends) · DAG distributed scheduling · agent cluster & consistent-hash sharding · load balancing (round-robin / weighted / hybrid) · cloud/edge heuristics · distributed checkpoint
+- **Debug Tooling** — local debug panel (`morainet-debug`) + Mermaid export (HTML / SVG / PNG) + CLI (`morainet chat`)
 
 ---
 
@@ -90,7 +96,7 @@ flowchart TD
 
 **An `agent.run()` flow**: Prepare context (system prompt + memory injection) → Reasoning strategy loop (call model → execute tools → feed back results, until convergence) → Trigger hooks (tracing / snapshot) → Persist memory → Return `AgentResult` (containing final answer, step trace, token usage, trace_id).
 
-> Full design in [`docs/architecture.md`](docs/architecture.md); implementation notes and deviations in [`docs/architecture-v1.3.md`](docs/architecture-v1.3.md).
+> Full design in [`docs/architecture.md`](docs/architecture.md); implementation notes and deviations in [`docs/architecture-v1.4.md`](docs/architecture-v1.4.md).
 
 ---
 
@@ -99,18 +105,21 @@ flowchart TD
 | Module | Responsibility |
 |: --- | --- |
 | `core/` | `Agent`, `Context`, unified data model (Message / ToolCall / Step / AgentResult) |
-| `reasoning/` | `ReasoningStrategy` abstraction + `ToolCallingStrategy` (default) / `ReActStrategy` |
-| `tools/` | `@tool` decorator, `ToolRegistry`, type annotations → JSON Schema, `Tool.from_schema` |
-| `providers/` | Provider abstraction and vendor implementations, `RetryingProvider`, SSE/NDJSON stream parsing |
-| `memory/` | Memory / Embedder / VectorStore abstractions and implementations (Hash/Ollama/OpenAI, InMemory/Chroma) |
-| `workflow/` | `Workflow` DAG, level-based parallel executor, Mermaid/DOT export |
+| `reasoning/` | `ReasoningStrategy` abstraction + `ToolCallingStrategy` (default) / `ReActStrategy` / `EnhancedReActStrategy` / `PlanSolveReflectStrategy` · `ContextCompressor` · `ToolCache` |
+| `tools/` | `@tool` decorator, `ToolRegistry`, type annotations → JSON Schema, `Tool.from_schema`, permission / approval / audit |
+| `providers/` | Provider abstraction + 13 vendor implementations, `RetryingProvider`, `ModelRouter`, SSE/NDJSON stream parsing |
+| `memory/` | Memory / Embedder / VectorStore abstractions and implementations (6 backends), RAG / KnowledgeBase / fact & goal stores |
+| `workflow/` | `Workflow` DAG, level-based parallel executor, Mermaid/DOT export, pluggable schedulers |
 | `prompts/` | `PromptTemplate` / `PromptRegistry` / built-in templates |
-| `persistence/` | `Checkpoint`, in-memory/file/SQLite Store, `CheckpointHook` |
-| `observability/` | `Hook` / `HookManager`, `TraceCollector`, `OTelHook` |
-| `mcp/` | `MCPClient`, `stdio_session`, MCP tool/resource/prompt conversion |
-| `multiagent/` | A2A protocol · debate/review/hierarchical/shared-memory topologies · `TeamOrchestrator` · `AgentFactory` dynamic spawn · `AgentPool` · `AgentSandbox` isolation |
-| `plugins.py` | entry points plugin registry |
-| `config.py` · `exceptions.py` · `tokens.py` · `debug.py` | Configuration, exception hierarchy, token estimation, Debugger |
+| `persistence/` | `Checkpoint`, in-memory/file/SQLite/Redis/PostgreSQL Store, `CheckpointHook` |
+| `observability/` | `Hook` / `HookManager`, `TraceCollector`, `DistributedRunTrace`, `OTelHook` |
+| `mcp/` | `MCPClient`, `stdio_session`, MCP tool/resource/prompt conversion, pool + cache |
+| `multiagent/` | A2A protocol · debate/review/hierarchical/shared-memory topologies · group chat · `TeamOrchestrator` · `AgentFactory` dynamic spawn · `AgentPool` · `AgentSandbox` isolation |
+| `multimodal/` | Image/audio/file content parts, vision/OCR/chart/speech tools, multimodal RAG, provider adapters |
+| `distributed/` | Task queue · DAG distributed scheduling · agent cluster & sharding · load balancing · distributed checkpoint |
+| `engineering/` | Rate limiting · concurrency control · billing tracking · circuit breaker |
+| `cli/` · `debug_panel/` | `morainet chat` CLI · local debug panel with Mermaid export |
+| `plugins.py` | entry points plugin registry + marketplace |
 
 ---
 
@@ -125,11 +134,25 @@ flowchart TD
 
 ## Installation
 
+Stable release (requires Python 3.11+):
+
 ```bash
-pip install -e ".[dev]"     # Requires Python 3.11+
+pip install morainet-ai
 ```
 
-Optional dependencies: `".[chroma]"` (ChromaDB vector store), `".[mcp]"` (MCP client), `".[otel]"` (OpenTelemetry).
+Pre-release (alpha / beta / rc):
+
+```bash
+pip install --pre morainet-ai
+```
+
+Development install (from source):
+
+```bash
+pip install -e ".[dev]"
+```
+
+Optional dependencies: `".[chroma]"` (ChromaDB vector store), `".[qdrant]"` / `".[pgvector]"` / `".[faiss]"` / `".[milvus]"` (vector stores), `".[mcp]"` (MCP client), `".[otel]"` (OpenTelemetry), `".[redis]"` / `".[postgres]"` (distributed/persistence backends), `".[rag]"` (full RAG stack).
 
 ---
 
@@ -195,20 +218,21 @@ Full listing in [`examples/README.md`](examples/README.md).
 
 ```bash
 pytest                     # Offline unit tests (no key needed, MockProvider)
-pytest --cov=morainet      # Coverage (gate: 80%)
+pytest --cov=morainet      # Coverage (gate is enforced in CI)
 pytest -m live             # Live endpoint integration (set credentials; auto-skip if absent)
 ruff check morainet tests  # Lint
 mypy morainet              # Strict type checking
 ```
 
-GitHub Actions runs the above checks on Python 3.11 / 3.12.
+GitHub Actions runs the above checks on Python 3.11 / 3.12. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
 
 ---
 
 ## Documentation
 
 - **Architecture design**: [`docs/architecture.md`](docs/architecture.md)
-- **Implementation notes & roadmap**: [`docs/architecture-v1.3.md`](docs/architecture-v1.3.md)
+- **Implementation notes & roadmap**: [`docs/architecture-v1.4.md`](docs/architecture-v1.4.md)
+- **Changelog**: [`CHANGELOG.md`](CHANGELOG.md)
 - **Step-by-step tutorials**: [GitHub Wiki](../../wiki)
 - **Contributing guide**: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
@@ -218,7 +242,15 @@ GitHub Actions runs the above checks on Python 3.11 / 3.12.
 
 **v1.0** released: Agent Core · Multi-Provider · Streaming · Memory (RAG/summarization) · Multi-Agent (A2A · debate/review/delegation/pool · sandbox) · Workflow · Prompt · Observability (Hook/Trace/Debugger/OTel) · Checkpoint (incl. SQLite) · Production hardening (retry/budget/approval) · Plugin · MCP.
 
-Upcoming: all live endpoint tests passing · more vector store backends (Qdrant/pgvector) · context compression in reasoning loop.
+**v1.1 – v1.3** (unreleased milestones, code landed): more vector store backends (Qdrant / pgvector / Faiss / Milvus) · context compression in reasoning loop (`ContextCompressor`) · tool security (`PermissionEnforcer` / `ApprovalFlow` / `AuditLogger`) · engineering controls (rate limit / concurrency / billing / circuit breaker) · model routing (`ModelRouter` / `OllamaScheduler`).
+
+**v1.4** (current, code-complete): Multimodal (image/audio parts · vision/OCR/chart/speech tools · multimodal RAG) · Distributed (task queue · DAG scheduling · cluster & sharding · load balancing · distributed checkpoint) · Redis/PostgreSQL checkpoint stores · CLI + local debug panel.
+
+Upcoming (see [`docs/architecture-v1.4.md`](docs/architecture-v1.4.md)):
+- Raise coverage gate back toward 70%+ (new module tests)
+- Verify all `pytest -m live` endpoints green with real keys
+- Distributed module production hardening (queue persistence/retry, cluster failover scenarios)
+- Full docs/wiki rewrite organized by capability area
 
 ---
 
