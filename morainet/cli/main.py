@@ -378,11 +378,11 @@ def _parse_docstring_params(doc: str) -> dict[str, str]:
     for line in doc.split("\n"):
         line = line.strip()
         if line.startswith(":param"):
-            parts = line.split(":", 2)
-            if len(parts) >= 3:
-                name = parts[0].replace(":param", "").strip()
-                desc = parts[2].strip()
-                result[name] = desc
+            # Format: ":param name: description"
+            rest = line[len(":param"):].strip()
+            if ":" in rest:
+                name, desc = rest.split(":", 1)
+                result[name.strip()] = desc.strip()
     return result
 
 
