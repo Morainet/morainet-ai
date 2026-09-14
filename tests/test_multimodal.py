@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from morainet.core.models import ChatResponse, Message, Role, Usage
+from morainet.core.models import ChatResponse, Message, Usage
 from morainet.multimodal import (
     AudioPart,
     ContentType,
