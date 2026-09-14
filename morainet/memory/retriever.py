@@ -352,10 +352,13 @@ class LLMReranker(Reranker):
             f"Document: {text}\n\n"
             "Relevance (1-10):"
         )
-        response = await self.provider.complete(messages=[Message.user(prompt)], model=self.provider.model)
+        response = await self.provider.chat([Message.user(prompt)])
         try:
-            return float(response.final_answer.strip()) / 10.0
-        except (ValueError, AttributeError):
+            content = response.message.content
+            if not isinstance(content, str):
+                return 0.0
+            return float(content.strip()) / 10.0
+        except (ValueError, AttributeError, TypeError):
             return 0.0
 
 
