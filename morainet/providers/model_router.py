@@ -377,9 +377,19 @@ async def multi_model_query(
     elif pick_strategy == "longest":
         return await _pick_longest(providers, messages, tools, response_format)
     else:
-        # "all" — concatenate all responses
-        raise NotImplementedError(
-            "pick_strategy='all' not yet implemented for multi_model_query"
+        # "all" — gather every response and return them combined in one ChatResponse
+        results_raw = await asyncio.gather(
+            *[p.chat(messages, tools, response_format) for p in providers],
+            return_exceptions=True,
+        )
+        ok = [r for r in results_raw if isinstance(r, ChatResponse)]
+        if not ok:
+            raise RuntimeError("All providers failed in multi-model query.")
+        combined = "\n\n".join(r.message.content or "" for r in ok)
+        return ChatResponse(
+            message=Message.assistant(content=combined),
+            usage=Usage(),
+            model="multi-model",
         )
 
 
