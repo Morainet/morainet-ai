@@ -46,7 +46,9 @@ dev = [
     "pytest-cov>=5.0",
     "pytest-timeout>=2.0",
     "opentelemetry-sdk>=1.20",
-    "ruff>=0.5",
+    # Pinned: ruff 0.16+ enables new default lint rules that surface 345 historical
+    # findings unrelated to current changes. Keep CI and local in lockstep.
+    "ruff==0.15.17",
     "mypy>=1.10",
 ]
 
