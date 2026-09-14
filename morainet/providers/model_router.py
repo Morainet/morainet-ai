@@ -385,7 +385,7 @@ async def multi_model_query(
         ok = [r for r in results_raw if isinstance(r, ChatResponse)]
         if not ok:
             raise RuntimeError("All providers failed in multi-model query.")
-        combined = "\n\n".join(r.message.content or "" for r in ok)
+        combined = "\n\n".join(str(r.message.content or "") for r in ok)
         return ChatResponse(
             message=Message.assistant(content=combined),
             usage=Usage(),
