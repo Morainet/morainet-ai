@@ -16,6 +16,9 @@ dependencies = [
     "pydantic-settings>=2.0",
     "httpx>=0.27",
     "loguru>=0.7",
+    # Required by distributed DAG to serialize/restore non-importable node
+    # functions (lambdas, closures) at runtime.
+    "cloudpickle>=2.0",
 ]
 
 [project.optional-dependencies]
