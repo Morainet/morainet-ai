@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from morainet.tools.audit import AuditEntry, AuditLogger, InMemoryAuditStore
+import json
+
+from morainet.tools.audit import (
+    AuditEntry,
+    AuditLogger,
+    FileAuditStore,
+    InMemoryAuditStore,
+    SQLiteAuditStore,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -186,3 +194,72 @@ async def test_log_deny():
     )
     results = await store.query()
     assert results[0].action == "deny"
+
+
+# ---------------------------------------------------------------------------
+# FileAuditStore
+# ---------------------------------------------------------------------------
+
+
+async def test_file_audit_store_write_and_query(tmp_path):
+    store = FileAuditStore(str(tmp_path / "audit.jsonl"))
+    await store.write(AuditEntry(trace_id="t1", role="agent", tool_name="search", action="execute"))
+    await store.write(AuditEntry(trace_id="t2", role="admin", tool_name="calc", action="deny"))
+    results = await store.query()
+    assert len(results) == 2
+    filtered = await store.query(tool_name="calc")
+    assert len(filtered) == 1
+    assert filtered[0].role == "admin"
+
+
+async def test_file_audit_store_empty_file(tmp_path):
+    store = FileAuditStore(str(tmp_path / "audit.jsonl"))
+    assert await store.query() == []
+
+
+async def test_file_audit_store_skips_malformed(tmp_path):
+    path = tmp_path / "audit.jsonl"
+    path.write_text(
+        "not valid json\n"
+        + json.dumps({"trace_id": "t", "role": "a", "tool_name": "x", "action": "execute"})
+        + "\n"
+    )
+    store = FileAuditStore(str(path))
+    results = await store.query()
+    assert len(results) == 1
+    assert results[0].tool_name == "x"
+
+
+# ---------------------------------------------------------------------------
+# SQLiteAuditStore
+# ---------------------------------------------------------------------------
+
+
+async def test_sqlite_audit_store_write_and_query(tmp_path):
+    store = SQLiteAuditStore(str(tmp_path / "audit.db"))
+    await store.write(
+        AuditEntry(
+            trace_id="t1",
+            role="agent",
+            tool_name="search",
+            action="execute",
+            arguments={"q": 1},
+        )
+    )
+    await store.write(AuditEntry(trace_id="t2", role="admin", tool_name="calc", action="deny"))
+    by_trace = await store.query(trace_id="t1")
+    assert len(by_trace) == 1
+    assert by_trace[0].tool_name == "search"
+    by_action = await store.query(action="deny")
+    assert len(by_action) == 1
+    assert by_action[0].role == "admin"
+    store.close()
+
+
+async def test_sqlite_audit_store_query_filters(tmp_path):
+    store = SQLiteAuditStore(str(tmp_path / "audit.db"))
+    await store.write(AuditEntry(trace_id="t1", role="agent", tool_name="search", action="execute"))
+    await store.write(AuditEntry(trace_id="t1", role="agent", tool_name="calc", action="execute"))
+    assert len(await store.query(tool_name="calc")) == 1
+    assert len(await store.query(role="agent")) == 2
+    store.close()
