@@ -95,7 +95,7 @@ class PostgresCheckpointStore(CheckpointStore):
                     ON CONFLICT (trace_id) DO UPDATE SET
                         data = EXCLUDED.data,
                         updated_at = NOW()""",
-                (checkpoint.trace_id, json.dumps(checkpoint.model_dump())),
+                (checkpoint.trace_id, json.dumps(checkpoint.model_dump(mode="json"))),
             )
 
     async def load(self, trace_id: str) -> Checkpoint | None:
